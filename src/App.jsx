@@ -1,0 +1,431 @@
+import { useEffect, useMemo, useState } from 'react';
+import LawyerLayout from './components/LawyerLayout';
+import BrandLogo from './components/BrandLogo';
+import ClientPortal from './screens/ClientPortal';
+import LawyerDashboard from './screens/LawyerDashboard';
+import ClientsView from './screens/ClientsView';
+import CasePage from './screens/CasePage';
+import AddClient from './screens/AddClient';
+import TeamView from './screens/TeamView';
+import InheritanceCalculator from './screens/InheritanceCalculator';
+import { clients as clientsData, getClientById, upcomingHearings as upcomingHearingsDefault, getCaseStatusOption } from './data/clients';
+import { clearDemoStore, createDefaultCaseContent, loadDemoStore, saveDemoStore } from './data/demoStore';
+import { buildHearingObj, toArNum } from './utils/arabicDate';
+import { generateId } from './utils/id';
+
+const NEW_CLIENT_PALETTE = [
+  { avatarBg: 'rgba(59,130,246,0.1)', avatarColor: '#3B82F6' },
+  { avatarBg: 'rgba(20,184,166,0.1)', avatarColor: '#14B8A6' },
+  { avatarBg: 'rgba(139,92,246,0.1)', avatarColor: '#8B5CF6' },
+  { avatarBg: 'rgba(236,72,153,0.1)', avatarColor: '#EC4899' },
+  { avatarBg: 'rgba(245,158,11,0.1)', avatarColor: '#F59E0B' },
+];
+
+function deriveDefaultCaseStatus(base) {
+  if (base.archived || ['صدر الحكم', 'تمت التسوية'].includes(base.status)) return 'منتهية';
+  if (base.status === 'قيد النظر') return 'قيد النظر';
+  return 'جارية';
+}
+
+const LAWYER_NAME = 'أ. نادين سامي';
+
+function isoDaysFromToday(days) {
+  const date = new Date();
+  date.setHours(12, 0, 0, 0);
+  date.setDate(date.getDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+const DEMO_HEARING_OVERRIDES = {
+  ahmed: buildHearingObj(isoDaysFromToday(2), '١٠:٠٠ صباحًا', '١٠:٠٠ ص'),
+  mona: buildHearingObj(isoDaysFromToday(4), '١١:٣٠ صباحًا', '١١:٣٠ ص'),
+  sara: buildHearingObj(isoDaysFromToday(6), '٩:٠٠ صباحًا', '٩:٠٠ ص'),
+};
+
+const DEMO_DEADLINE_OVERRIDES = {
+  ahmed: isoDaysFromToday(2),
+  mona: isoDaysFromToday(5),
+  rania: isoDaysFromToday(8),
+};
+
+function EntrySwitcher({ onSelect, onReset }) {
+  return (
+    <div
+      dir="rtl"
+      style={{
+        minHeight: '100vh',
+        width: '100%',
+        background: '#D9D4CB',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 28,
+        padding: '40px 24px',
+        boxSizing: 'border-box',
+        fontFamily: "'Almarai',sans-serif",
+      }}
+    >
+      <div style={{ textAlign: 'center' }}>
+        <BrandLogo dark={false} markSize={48} />
+        <div style={{ color: '#5D6579', fontSize: 12.5, fontWeight: 700, marginTop: 14 }}>
+          اختر الواجهة اللي هتبدأ منها الجولة
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 14, width: '100%', maxWidth: 360 }}>
+        <button
+          type="button"
+          onClick={() => onSelect('lawyer')}
+          style={{
+            background: '#1C2D4F',
+            color: '#C9A870',
+            border: 'none',
+            borderRadius: 14,
+            padding: '18px 24px',
+            fontFamily: "'Almarai',sans-serif",
+            fontSize: 16,
+            fontWeight: 800,
+            cursor: 'pointer',
+            boxShadow: '0 6px 24px rgba(28,45,79,0.26)',
+          }}
+        >
+          واجهة المحامي
+        </button>
+        <button
+          type="button"
+          onClick={() => onSelect('client')}
+          style={{
+            background: '#fff',
+            color: '#1C2D4F',
+            border: '1.5px solid #E8E4DC',
+            borderRadius: 14,
+            padding: '18px 24px',
+            fontFamily: "'Almarai',sans-serif",
+            fontSize: 16,
+            fontWeight: 800,
+            cursor: 'pointer',
+            boxShadow: '0 2px 16px rgba(0,0,0,0.05)',
+          }}
+        >
+          بوابة العميل
+        </button>
+        <div style={{ display: 'flex', justifyContent: 'center', gap: 14, marginTop: 4, flexWrap: 'wrap' }}>
+          <a
+            href="./index.html"
+            style={{ color: '#1C2D4F', fontSize: 11.5, fontWeight: 700, textDecoration: 'none' }}
+          >
+            صفحة التعريف
+          </a>
+          <button
+            type="button"
+            onClick={onReset}
+            style={{ background: 'none', border: 'none', color: '#8A4B43', fontSize: 11.5, fontWeight: 700, cursor: 'pointer', fontFamily: "'Almarai',sans-serif", padding: 0 }}
+          >
+            إعادة بيانات العرض
+          </button>
+        </div>
+      </div>
+
+      <div style={{ background: 'rgba(28,45,79,0.07)', border: '1px solid rgba(28,45,79,0.12)', color: '#5D6579', borderRadius: 999, padding: '7px 14px', fontSize: 10.5, fontWeight: 700 }}>
+        نسخة عرض · جميع الأسماء والبيانات تجريبية
+      </div>
+    </div>
+  );
+}
+
+function getScopedClientIdFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('client');
+}
+
+export default function App() {
+  const scopedClientId = useMemo(() => getScopedClientIdFromUrl(), []);
+  const [mode, setMode] = useState(scopedClientId ? 'client' : null);
+  const [lawyerView, setLawyerView] = useState('dashboard');
+  const [selectedClientId, setSelectedClientId] = useState(scopedClientId || 'ahmed');
+
+  const [sessionsMap, setSessionsMap] = useState({});
+  const [hearingOverrides, setHearingOverrides] = useState({});
+  const [assignmentOverrides, setAssignmentOverrides] = useState({});
+  const [archiveOverrides, setArchiveOverrides] = useState({});
+  const [statusOverrides, setStatusOverrides] = useState({});
+  const [addedClients, setAddedClients] = useState([]);
+  const [caseContentMap, setCaseContentMap] = useState(loadDemoStore);
+  const [toast, setToast] = useState(null);
+
+  useEffect(() => {
+    saveDemoStore(caseContentMap);
+  }, [caseContentMap]);
+
+  const showToast = (msg) => {
+    setToast(msg);
+    setTimeout(() => setToast((t) => (t === msg ? null : t)), 2500);
+  };
+
+  const findBaseClient = (id) => addedClients.find((c) => c.id === id) || getClientById(id);
+
+  const getMergedClient = (id) => {
+    const base = findBaseClient(id);
+    if (!base) return base;
+    const caseStatus = statusOverrides[id] || deriveDefaultCaseStatus(base);
+    const statusOption = getCaseStatusOption(caseStatus);
+    return {
+      ...base,
+      nextHearing: hearingOverrides[id] || DEMO_HEARING_OVERRIDES[id] || base.nextHearing,
+      appealDeadline: DEMO_DEADLINE_OVERRIDES[id] || base.appealDeadline,
+      assignedTo: assignmentOverrides[id] || base.assignedTo,
+      archived: archiveOverrides[id] !== undefined ? archiveOverrides[id] : !!base.archived,
+      status: caseStatus,
+      statusColor: statusOption.color,
+      statusBg: statusOption.bg,
+      statusBorder: statusOption.border,
+    };
+  };
+
+  const handleStatusChange = (clientId, newStatus) => {
+    setStatusOverrides((prev) => ({ ...prev, [clientId]: newStatus }));
+  };
+
+  const getMergedSessions = (id) => {
+    const dynamic = sessionsMap[id] || [];
+    const base = findBaseClient(id)?.sessions || [];
+    return [...dynamic, ...base];
+  };
+
+  const getCaseContent = (clientId) => caseContentMap[clientId] || createDefaultCaseContent();
+
+  const updateCaseContent = (clientId, updater) => {
+    setCaseContentMap((prev) => {
+      const current = prev[clientId] || createDefaultCaseContent();
+      return { ...prev, [clientId]: updater(current) };
+    });
+  };
+
+  const handleToggleDocument = (clientId, documentId) => {
+    updateCaseContent(clientId, (content) => ({
+      ...content,
+      docs: content.docs.map((doc) => (doc.id === documentId ? { ...doc, visible: !doc.visible } : doc)),
+    }));
+  };
+
+  const handleToggleUpdate = (clientId, updateId) => {
+    updateCaseContent(clientId, (content) => ({
+      ...content,
+      updates: content.updates.map((item) => (item.id === updateId ? { ...item, visible: !item.visible } : item)),
+    }));
+  };
+
+  const handleCaseMessage = (clientId, from, text) => {
+    const cleanText = text.trim();
+    if (!cleanText) return;
+    updateCaseContent(clientId, (content) => ({
+      ...content,
+      messages: [...content.messages, { id: generateId('msg'), from, text: cleanText, time: 'الآن' }],
+    }));
+  };
+
+  const resetDemo = () => {
+    clearDemoStore();
+    setCaseContentMap({});
+    setSessionsMap({});
+    setHearingOverrides({});
+    setAssignmentOverrides({});
+    setArchiveOverrides({});
+    setStatusOverrides({});
+    setAddedClients([]);
+  };
+
+  const handleAddClient = (form) => {
+    const id = `client-${Date.now()}`;
+    const palette = NEW_CLIENT_PALETTE[addedClients.length % NEW_CLIENT_PALETTE.length];
+    const filedToday = buildHearingObj(new Date().toISOString().slice(0, 10));
+    const newClient = {
+      id,
+      name: form.name,
+      phone: form.phone,
+      initial: form.name.trim().charAt(0) || '؟',
+      avatarBg: palette.avatarBg,
+      avatarColor: palette.avatarColor,
+      caseTitle: form.caseTitle,
+      caseType: form.caseType,
+      caseNumber: `${filedToday.full.split(' ').pop()}/${toArNum(1000 + addedClients.length)}`,
+      court: form.court,
+      courtShort: form.court.replace(/^محكمة\s+/, ''),
+      governorate: form.governorate,
+      status: 'قيد النظر',
+      statusColor: '#F59E0B',
+      statusBg: 'rgba(245,158,11,0.1)',
+      statusBorder: 'rgba(245,158,11,0.22)',
+      filedDate: filedToday.full,
+      stage: 'رفع الدعوى',
+      activeCases: 1,
+      assignedTo: 'nadine',
+      nextHearing: buildHearingObj(form.hearingDate),
+      sessions: [],
+      teamDiscussion: [],
+    };
+    setAddedClients((prev) => [...prev, newClient]);
+    showToast('تمت إضافة الموكّل بنجاح');
+    setLawyerView('clients');
+  };
+
+  const handleAddSession = (clientId, session) => {
+    setSessionsMap((prev) => ({
+      ...prev,
+      [clientId]: [session, ...(prev[clientId] || [])],
+    }));
+    if (session.nextHearing) {
+      setHearingOverrides((prev) => ({ ...prev, [clientId]: session.nextHearing }));
+    }
+  };
+
+  const handleReassign = (clientId, newAssigneeId) => {
+    setAssignmentOverrides((prev) => ({ ...prev, [clientId]: newAssigneeId }));
+  };
+
+  const handleArchive = (clientId) => {
+    setArchiveOverrides((prev) => ({ ...prev, [clientId]: true }));
+    showToast('تم نقل القضية إلى الأرشيف');
+    setLawyerView('clients');
+  };
+
+  const handleRestore = (clientId) => {
+    setArchiveOverrides((prev) => ({ ...prev, [clientId]: false }));
+    showToast('تمت استعادة القضية إلى النشطين');
+  };
+
+  const mergedUpcomingHearings = upcomingHearingsDefault.map((h) => getMergedClient(h.id));
+  const mergedAllClients = [...clientsData, ...addedClients].map((c) => getMergedClient(c.id));
+
+  const goHome = () => {
+    if (scopedClientId) {
+      window.history.replaceState(null, '', window.location.pathname);
+    }
+    setMode(null);
+    setLawyerView('dashboard');
+  };
+
+  if (mode === null) {
+    return <EntrySwitcher onSelect={setMode} onReset={resetDemo} />;
+  }
+
+  if (mode === 'client') {
+    return (
+      <div style={{ minHeight: '100vh', background: '#D9D4CB' }}>
+        {!scopedClientId && (
+          <div style={{ display: 'flex', justifyContent: 'center', padding: '10px 16px 0', fontFamily: "'Almarai',sans-serif" }}>
+            <button
+              type="button"
+              onClick={goHome}
+              style={{ background: 'none', border: 'none', color: 'rgba(28,45,79,0.55)', fontSize: 11, fontWeight: 700, letterSpacing: 0.6, cursor: 'pointer', padding: '6px 10px' }}
+            >
+              LAWRAQ · بوابة العميل — رجوع لاختيار الواجهة
+            </button>
+          </div>
+        )}
+        <ClientPortal
+          client={getMergedClient(selectedClientId)}
+          lawyerName={LAWYER_NAME}
+          latestSession={getMergedSessions(selectedClientId)[0]}
+          caseContent={getCaseContent(selectedClientId)}
+          onSendMessage={(text) => handleCaseMessage(selectedClientId, 'client', text)}
+        />
+      </div>
+    );
+  }
+
+  const openCase = (id) => {
+    setSelectedClientId(id);
+    setLawyerView('case');
+  };
+
+  let content;
+  if (lawyerView === 'clients') {
+    content = (
+      <ClientsView
+        onOpenCase={openCase}
+        allClients={mergedAllClients}
+        onCopied={() => showToast('تم نسخ رابط الموكّل ✓')}
+        onWhatsAppClick={() => showToast('التكامل مع واتساب — قريبًا')}
+      />
+    );
+  } else if (lawyerView === 'case') {
+    content = (
+      <CasePage
+        key={selectedClientId}
+        client={getMergedClient(selectedClientId)}
+        lawyerName={LAWYER_NAME}
+        onBack={() => setLawyerView('clients')}
+        sessions={getMergedSessions(selectedClientId)}
+        onAddSession={(session) => handleAddSession(selectedClientId, session)}
+        onReassign={(newId) => handleReassign(selectedClientId, newId)}
+        onArchive={() => handleArchive(selectedClientId)}
+        onRestore={() => handleRestore(selectedClientId)}
+        onStatusChange={(newStatus) => handleStatusChange(selectedClientId, newStatus)}
+        caseContent={getCaseContent(selectedClientId)}
+        onToggleDocument={(documentId) => handleToggleDocument(selectedClientId, documentId)}
+        onToggleUpdate={(updateId) => handleToggleUpdate(selectedClientId, updateId)}
+        onSendCaseMessage={(text) => handleCaseMessage(selectedClientId, 'lawyer', text)}
+        onWhatsAppClick={() => showToast('التكامل مع واتساب — قريبًا')}
+        onTemplatesClick={() => showToast('قريبًا — نماذج قانونية جاهزة للاستخدام المباشر')}
+      />
+    );
+  } else if (lawyerView === 'add') {
+    content = (
+      <AddClient
+        onBack={() => setLawyerView('dashboard')}
+        onSubmit={handleAddClient}
+      />
+    );
+  } else if (lawyerView === 'team') {
+    content = <TeamView allClients={mergedAllClients} />;
+  } else if (lawyerView === 'inheritance') {
+    content = <InheritanceCalculator />;
+  } else {
+    content = (
+      <LawyerDashboard
+        lawyerName={LAWYER_NAME}
+        onOpenCase={openCase}
+        onOpenClients={() => setLawyerView('clients')}
+        upcomingHearings={mergedUpcomingHearings}
+        allClients={mergedAllClients}
+      />
+    );
+  }
+
+  return (
+    <LawyerLayout
+      activeView={lawyerView === 'case' || lawyerView === 'add' ? 'clients' : lawyerView}
+      onNavigate={setLawyerView}
+      onAddClient={() => setLawyerView('add')}
+      onHome={goHome}
+      lawyerName={LAWYER_NAME}
+    >
+      {content}
+      {toast && (
+        <div
+          dir="rtl"
+          style={{
+            position: 'fixed',
+            bottom: 24,
+            left: '50%',
+            transform: 'translateX(-50%)',
+            background: '#1C2D4F',
+            color: '#fff',
+            padding: '12px 22px',
+            borderRadius: 30,
+            fontSize: 13,
+            fontWeight: 700,
+            fontFamily: "'Almarai',sans-serif",
+            boxShadow: '0 10px 30px rgba(0,0,0,0.28)',
+            zIndex: 300,
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {toast}
+        </div>
+      )}
+    </LawyerLayout>
+  );
+}

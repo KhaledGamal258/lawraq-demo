@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LAWRAQ — مكتبك القانوني من غير فوضى</title>
+<meta name="description" content="LAWRAQ منصة عربية لتنظيم القضايا والجلسات وفريق المكتب والتواصل مع الموكّلين في مكان واحد.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy:#1C2D4F;
+    --navy-deep:#12203B;
+    --gold:#C9A870;
+    --gold-soft:#E4D3AE;
+    --sand:#D9D4CB;
+    --off:#F6F4F0;
+    --white:#FFFFFF;
+    --ink:#1C2D4F;
+    --muted:#5D6579;
+    --faint:#9BA3AF;
+    --line:#E8E4DC;
+    --radius:16px;
+    --radius-sm:10px;
+    --shadow:0 10px 40px rgba(28,45,79,0.10);
+    --shadow-lg:0 24px 70px rgba(18,32,59,0.28);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html{scroll-behavior:smooth;}
+  body{
+    font-family:'Almarai',sans-serif;
+    background:var(--off);
+    color:var(--ink);
+    line-height:1.7;
+    -webkit-font-smoothing:antialiased;
+  }
+  img,svg{display:block;max-width:100%;}
+  a{color:inherit;text-decoration:none;}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 24px;}
+  section{padding:96px 0;}
+  @media (max-width:720px){ section{padding:64px 0;} }
+
+  /* ---------- eyebrow / badge ---------- */
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:8px;
+    background:rgba(201,168,112,0.14);
+    color:var(--gold);
+    border:1px solid rgba(201,168,112,0.35);
+    font-size:13px;font-weight:700;
+    padding:7px 16px;border-radius:999px;
+    letter-spacing:.2px;
+  }
+  .eyebrow.on-light{ background:rgba(28,45,79,0.06); color:var(--navy); border-color:rgba(28,45,79,0.14); }
+  .eyebrow .dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
+
+  /* ---------- header ---------- */
+  header{
+    position:sticky;top:0;z-index:50;
+    background:rgba(246,244,240,0.85);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  .nav{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;max-width:1120px;margin:0 auto;}
+  .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:19px;color:var(--navy);letter-spacing:1.2px;}
+  .brand .mark{width:34px;height:34px;}
+  .brand small{display:block;color:var(--gold);font-size:8px;letter-spacing:0;font-weight:800;margin-top:3px;}
+  .nav-cta{
+    background:var(--navy);color:var(--gold);
+    padding:11px 22px;border-radius:999px;
+    font-weight:700;font-size:14px;
+    box-shadow:0 6px 20px rgba(28,45,79,0.22);
+    transition:transform .2s ease;
+  }
+  .nav-cta:hover{transform:translateY(-1px);}
+
+  /* ---------- hero ---------- */
+  .hero{
+    position:relative;
+    background:radial-gradient(120% 140% at 15% 0%, #24365c 0%, var(--navy) 45%, var(--navy-deep) 100%);
+    color:#fff;
+    overflow:hidden;
+    padding:88px 0 0;
+  }
+  .hero::before{
+    content:"";position:absolute;inset:0;
+    background:
+      radial-gradient(600px 300px at 85% 10%, rgba(201,168,112,0.18), transparent 70%);
+    pointer-events:none;
+  }
+  .hero-grid{
+    display:grid;grid-template-columns:1.1fr .9fr;gap:56px;align-items:center;
+    position:relative;
+  }
+  @media (max-width:900px){ .hero-grid{grid-template-columns:1fr;} }
+  .hero h1{
+    font-size:44px;font-weight:800;line-height:1.32;
+    margin:22px 0 18px;
+    letter-spacing:-.3px;
+  }
+  .hero h1 span{color:var(--gold);}
+  @media (max-width:720px){ .hero h1{font-size:32px;} }
+  .hero p.lead{
+    font-size:18px;color:rgba(255,255,255,0.78);max-width:520px;margin-bottom:34px;
+  }
+  .hero-actions{display:flex;gap:14px;flex-wrap:wrap;}
+  .btn-primary{
+    background:var(--gold);color:var(--navy-deep);
+    padding:15px 30px;border-radius:999px;
+    font-weight:800;font-size:15.5px;
+    box-shadow:0 14px 34px rgba(201,168,112,0.35);
+    border:none;cursor:pointer;
+    transition:transform .2s ease, box-shadow .2s ease;
+  }
+  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 18px 40px rgba(201,168,112,0.45);}
+  .btn-ghost{
+    background:transparent;color:#fff;
+    padding:15px 26px;border-radius:999px;
+    font-weight:700;font-size:15px;
+    border:1.5px solid rgba(255,255,255,0.28);
+  }
+  .hero-note{margin-top:18px;font-size:13.5px;color:rgba(255,255,255,0.5);}
+
+  /* signature scale mark */
+  .scale-wrap{position:relative;display:flex;justify-content:center;}
+  .scale-svg{width:280px;height:280px;filter:drop-shadow(0 20px 40px rgba(0,0,0,0.35));}
+  @keyframes settle{
+    0%{transform:rotate(-6deg);}
+    50%{transform:rotate(4deg);}
+    100%{transform:rotate(0deg);}
+  }
+  .scale-beam{transform-origin:140px 96px;animation:settle 2.4s cubic-bezier(.22,1,.36,1) both;}
+  @media (prefers-reduced-motion:reduce){ .scale-beam{animation:none;} }
+
+  /* floating portal card mockup */
+  .portal-mock{
+    background:rgba(255,255,255,0.06);
+    border:1px solid rgba(255,255,255,0.14);
+    border-radius:20px;padding:22px;
+    backdrop-filter:blur(6px);
+    max-width:340px;margin:34px auto 0;
+    box-shadow:var(--shadow-lg);
+  }
+  .portal-mock .row1{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
+  .portal-mock .status-pill{
+    background:rgba(201,168,112,0.18);color:var(--gold-soft);
+    font-size:11.5px;font-weight:700;padding:4px 12px;border-radius:999px;
+    border:1px solid rgba(201,168,112,0.3);
+  }
+  .portal-mock .case-title{font-weight:800;font-size:15.5px;color:#fff;margin-bottom:4px;}
+  .portal-mock .case-sub{font-size:12.5px;color:rgba(255,255,255,0.5);margin-bottom:16px;}
+  .portal-mock .track{display:flex;gap:6px;margin-bottom:8px;}
+  .portal-mock .seg{flex:1;height:5px;border-radius:4px;background:rgba(255,255,255,0.14);}
+  .portal-mock .seg.done{background:var(--gold);}
+  .portal-mock .next{font-size:12px;color:rgba(255,255,255,0.55);}
+
+  .hero-shots{position:relative;height:64px;margin-top:64px;}
+  .wave{position:absolute;bottom:-1px;left:0;width:100%;display:block;}
+
+  /* ---------- problem ---------- */
+  .problem{background:var(--off);}
+  .section-head{max-width:640px;margin-bottom:52px;}
+  .section-head h2{font-size:30px;font-weight:800;margin:14px 0 12px;color:var(--navy);}
+  .section-head p{color:var(--muted);font-size:16px;}
+
+  .problem-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
+  @media (max-width:820px){ .problem-grid{grid-template-columns:1fr;} }
+  .problem-card{
+    background:var(--white);border-radius:var(--radius);
+    padding:28px 24px;box-shadow:var(--shadow);
+    border-top:3px solid var(--gold);
+  }
+  .problem-card .num{font-size:13px;color:var(--gold);font-weight:800;margin-bottom:10px;letter-spacing:.5px;}
+  .problem-card h3{font-size:17px;font-weight:800;margin-bottom:8px;color:var(--navy);}
+  .problem-card p{color:var(--muted);font-size:14.5px;}
+
+  /* ---------- pillars ---------- */
+  .pillars{background:var(--white);}
+  .pillars-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;}
+  @media (max-width:820px){ .pillars-grid{grid-template-columns:1fr;} }
+  .pillar{
+    background:var(--off);border-radius:var(--radius);
+    padding:32px 26px;
+    border:1px solid var(--line);
+    transition:transform .25s ease, box-shadow .25s ease;
+  }
+  .pillar:hover{transform:translateY(-4px);box-shadow:var(--shadow);}
+  .pillar .icon{
+    width:46px;height:46px;border-radius:12px;
+    background:var(--navy);display:flex;align-items:center;justify-content:center;
+    margin-bottom:18px;
+  }
+  .pillar .icon svg{width:22px;height:22px;stroke:var(--gold);}
+  .pillar h3{font-size:18px;font-weight:800;margin-bottom:10px;color:var(--navy);}
+  .pillar p{color:var(--muted);font-size:14.5px;}
+
+  /* ---------- steps ---------- */
+  .steps{background:var(--off);}
+  .steps-row{display:flex;gap:0;counter-reset:step;}
+  @media (max-width:820px){ .steps-row{flex-direction:column;} }
+  .step{
+    flex:1;position:relative;padding:0 26px 0 0;
+  }
+  .step:not(:last-child){border-left:1px dashed var(--sand);}
+  @media (max-width:820px){
+    .step{padding:0 0 26px 26px;border-left:none !important;border-right:1px dashed var(--sand);}
+    .step:last-child{border-right:none;}
+  }
+  .step .step-num{
+    width:38px;height:38px;border-radius:50%;
+    background:var(--navy);color:var(--gold);
+    display:flex;align-items:center;justify-content:center;
+    font-weight:800;font-size:15px;margin-bottom:16px;
+  }
+  .step h4{font-size:16px;font-weight:800;margin-bottom:8px;color:var(--navy);}
+  .step p{color:var(--muted);font-size:14px;}
+
+  /* ---------- trust ---------- */
+  .trust{background:var(--white);}
+  .trust-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center;}
+  @media (max-width:820px){ .trust-grid{grid-template-columns:1fr;} }
+  .trust-list{display:flex;flex-direction:column;gap:20px;}
+  .trust-item{display:flex;gap:14px;align-items:flex-start;}
+  .trust-item .check{
+    width:26px;height:26px;border-radius:50%;background:rgba(201,168,112,0.16);
+    display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;
+  }
+  .trust-item .check svg{width:13px;height:13px;stroke:var(--gold);}
+  .trust-item h5{font-size:15.5px;font-weight:800;color:var(--navy);margin-bottom:4px;}
+  .trust-item p{font-size:13.5px;color:var(--muted);}
+  .trust-visual{
+    background:var(--navy-deep);border-radius:20px;padding:36px;
+    color:#fff;position:relative;overflow:hidden;
+  }
+  .trust-visual::after{
+    content:"";position:absolute;inset:0;
+    background:radial-gradient(400px 200px at 100% 0%, rgba(201,168,112,0.16), transparent 70%);
+  }
+  .trust-visual h4{position:relative;font-size:19px;font-weight:800;margin-bottom:10px;}
+  .trust-visual p{position:relative;color:rgba(255,255,255,0.65);font-size:14px;margin-bottom:22px;}
+  .trust-badge{
+    position:relative;display:inline-flex;align-items:center;gap:8px;
+    background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.16);
+    padding:8px 14px;border-radius:999px;font-size:12.5px;font-weight:700;color:var(--gold-soft);
+  }
+
+  /* ---------- waitlist ---------- */
+  .waitlist{
+    background:linear-gradient(160deg, var(--navy) 0%, var(--navy-deep) 100%);
+    color:#fff;
+  }
+  .waitlist-inner{
+    max-width:620px;margin:0 auto;text-align:center;
+  }
+  .waitlist h2{font-size:30px;font-weight:800;margin:16px 0 12px;}
+  .waitlist p.lead{color:rgba(255,255,255,0.72);font-size:16px;margin-bottom:36px;}
+  form.waitlist-form{
+    background:rgba(255,255,255,0.05);
+    border:1px solid rgba(255,255,255,0.14);
+    border-radius:var(--radius);
+    padding:28px;text-align:right;
+  }
+  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
+  @media (max-width:560px){ .form-row{grid-template-columns:1fr;} }
+  .field label{display:block;font-size:13px;font-weight:700;color:rgba(255,255,255,0.7);margin-bottom:7px;}
+  .field input, .field select{
+    width:100%;background:rgba(255,255,255,0.94);border:none;border-radius:10px;
+    padding:13px 14px;font-family:'Almarai',sans-serif;font-size:14px;color:var(--navy);
+    outline:none;
+  }
+  .field input::placeholder{color:var(--faint);}
+  .submit-btn{
+    width:100%;margin-top:6px;
+    background:var(--gold);color:var(--navy-deep);
+    padding:15px;border-radius:10px;border:none;
+    font-weight:800;font-size:15.5px;cursor:pointer;
+    transition:transform .2s ease;
+  }
+  .submit-btn:hover{transform:translateY(-1px);}
+  .form-fine{font-size:12px;color:rgba(255,255,255,0.45);margin-top:14px;text-align:center;}
+  .success-msg{
+    display:none;background:rgba(201,168,112,0.14);border:1px solid rgba(201,168,112,0.35);
+    border-radius:var(--radius-sm);padding:20px;text-align:center;color:var(--gold-soft);font-weight:700;
+  }
+
+  /* ---------- footer ---------- */
+  footer{background:var(--navy-deep);color:rgba(255,255,255,0.55);padding:44px 0 28px;}
+  .footer-inner{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;}
+  .footer-brand{display:flex;align-items:center;gap:8px;color:#fff;font-weight:800;font-size:16px;}
+  .footer-links{display:flex;gap:22px;font-size:13.5px;flex-wrap:wrap;}
+  .footer-links a:hover{color:var(--gold);}
+  .footer-bottom{margin-top:26px;padding-top:22px;border-top:1px solid rgba(255,255,255,0.08);font-size:12.5px;text-align:center;color:rgba(255,255,255,0.35);}
+
+  /* reveal on scroll */
+  .reveal{opacity:0;transform:translateY(18px);transition:opacity .7s ease, transform .7s ease;}
+  .reveal.in{opacity:1;transform:translateY(0);}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="nav">
+    <div class="brand">
+      <svg class="mark" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+        <rect x="2" y="2" width="44" height="44" rx="13" fill="#1C2D4F"/>
+        <path d="M15 11.5h12l7 7V36H15V11.5Z" stroke="#C9A870" stroke-width="2.2" stroke-linejoin="round"/>
+        <path d="M27 11.5v7h7" stroke="#C9A870" stroke-width="2.2" stroke-linejoin="round"/>
+        <path d="M20 25h9M20 30h6" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="36.5" cy="11.5" r="2.5" fill="#C9A870"/>
+      </svg>
+      <span dir="ltr">LAWRAQ<small dir="rtl">لا ورق · لا فوضى</small></span>
+    </div>
+    <a href="./demo.html" class="nav-cta">جرّب الجولة</a>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <span class="eyebrow"><span class="dot"></span> نسخة عرض تفاعلية · بيانات تجريبية</span>
+      <h1>وقتك أثمن<br>من مكالمة <span>نص الليل</span></h1>
+      <p class="lead">LAWRAQ بيرتّب قضاياك وجلساتك وفريق مكتبك، ويدّي موكّلك مكان يتابع منه بنفسه — من غير مكالمات متابعة طول اليوم.</p>
+      <div class="hero-actions">
+        <a href="./demo.html" class="btn-primary">ابدأ الجولة التفاعلية</a>
+        <a href="#waitlist" class="btn-ghost">سجّل اهتمامك</a>
+      </div>
+      <p class="hero-note">الديمو لا يجمع كلمات مرور ولا يحتوي على بيانات موكّلين حقيقية.</p>
+    </div>
+
+    <div class="scale-wrap">
+      <div>
+        <svg class="scale-svg" viewBox="0 0 280 280" fill="none" aria-label="LAWRAQ digital document mark">
+          <rect x="57" y="38" width="166" height="204" rx="34" fill="rgba(255,255,255,0.035)" stroke="rgba(255,255,255,0.1)"/>
+          <path d="M96 69h70l38 38v108H96V69Z" fill="rgba(201,168,112,0.08)" stroke="#C9A870" stroke-width="4" stroke-linejoin="round"/>
+          <path d="M166 69v38h38" stroke="#C9A870" stroke-width="4" stroke-linejoin="round"/>
+          <path d="M121 137h57M121 163h43M121 189h30" stroke="#fff" stroke-opacity=".82" stroke-width="5" stroke-linecap="round"/>
+          <circle cx="212" cy="69" r="10" fill="#C9A870"/>
+          <rect x="224" y="91" width="13" height="13" rx="4" fill="#C9A870" opacity=".7"/>
+          <rect x="228" y="113" width="9" height="9" rx="3" fill="#C9A870" opacity=".4"/>
+        </svg>
+        <div class="portal-mock">
+          <div class="row1">
+            <span class="status-pill">قيد النظر</span>
+            <span style="font-size:11px;color:rgba(255,255,255,0.4);">بوابة الموكّل</span>
+          </div>
+          <div class="case-title">قضية تعويض عمالي</div>
+          <div class="case-sub">أحمد الشريف — استئناف القاهرة</div>
+          <div class="track">
+            <div class="seg done"></div><div class="seg done"></div><div class="seg"></div><div class="seg"></div>
+          </div>
+          <div class="next" id="demoNextHearing">الجلسة القادمة: قريبًا</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="hero-shots">
+    <svg class="wave" viewBox="0 0 1440 64" preserveAspectRatio="none">
+      <path d="M0,32 C360,0 1080,64 1440,24 L1440,64 L0,64 Z" fill="#F6F4F0"/>
+    </svg>
+  </div>
+</section>
+
+<section class="problem">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="eyebrow on-light"><span class="dot"></span> المشكلة</span>
+      <h2>الشغل مش الوجع الحقيقي.<br>الفوضى حوالينه هي الوجع.</h2>
+      <p>عملاء بيرنوا في أي وقت، جلسات صعب تتابعها في الدماغ، ومستندات مبعترة بين الورق والموبايل.</p>
+    </div>
+    <div class="problem-grid">
+      <div class="problem-card reveal">
+        <div class="num">٠١</div>
+        <h3>تليفونك مش بيسكت</h3>
+        <p>أغلب المكالمات بتكون "قضيتي وصلت لفين؟" — سؤال ممكن يترد عليه من غير ما تتقاطع.</p>
+      </div>
+      <div class="problem-card reveal">
+        <div class="num">٠٢</div>
+        <h3>مواعيد في الدماغ أو على ورق</h3>
+        <p>خوف دايم من فوات جلسة أو ميعاد طعن — وده مش خوف زيادة، ده حق موكّلك ومسؤولية المكتب.</p>
+      </div>
+      <div class="problem-card reveal">
+        <div class="num">٠٣</div>
+        <h3>مستندات مبعترة</h3>
+        <p>مفيش مكان واحد تلاقي فيه كل حاجة تخص القضية وأنت بره المكتب أو قدام الموكّل.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="pillars" id="pillars">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="eyebrow on-light"><span class="dot"></span> الحل</span>
+      <h2>منصة واحدة، ثلاث فوايد حقيقية</h2>
+      <p>مبنية من الأول لطريقة شغل المحامي المصري — مش نسخة معرّبة من نظام أجنبي.</p>
+    </div>
+    <div class="pillars-grid">
+      <div class="pillar reveal">
+        <div class="icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/><path d="M8 4v-1M16 4v-1"/>
+          </svg>
+        </div>
+        <h3>مكتبك في جيبك</h3>
+        <p>ملف القضية كامل معاك في أي مكان — المحكمة، عند الموكّل، وأنت مسافر. تشوف وتطبع من غير ما ترجع المكتب.</p>
+      </div>
+      <div class="pillar reveal">
+        <div class="icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="9" cy="7" r="4"/><path d="M2 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2"/><path d="M17 3.5a4 4 0 0 1 0 7.5"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+          </svg>
+        </div>
+        <h3>فريق المكتب متعاون</h3>
+        <p>وزّع القضايا على المحامين عندك، وتابع قرار كل جلسة، ونقاش داخلي بينكم — بعيد تمامًا عن الموكّل.</p>
+      </div>
+      <div class="pillar reveal">
+        <div class="icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
+          </svg>
+        </div>
+        <h3>بوابة خاصة لكل موكّل</h3>
+        <p>لينك خاص بكل موكّل — يشوف قضيته بس، ويسيبلك رسالة ترد عليها وانت فاضي. مفيش تسجيل، مفيش تطبيق.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="steps">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <span class="eyebrow on-light"><span class="dot"></span> إزاي تبدأ</span>
+      <h2>ثلاث خطوات بسيطة</h2>
+    </div>
+    <div class="steps-row">
+      <div class="step reveal">
+        <div class="step-num">١</div>
+        <h4>سجّل بياناتك</h4>
+        <p>اسمك ورقم تليفونك — دقيقة واحدة، من غير أي التزام.</p>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">٢</div>
+        <h4>هنكلّمك</h4>
+        <p>نعرّفك أكتر على المنصة ونسمع احتياجات مكتبك بالتحديد.</p>
+      </div>
+      <div class="step reveal">
+        <div class="step-num">٣</div>
+        <h4>تبدأ تجربتك</h4>
+        <p>تبدأ بجولة مخصصة على LAWRAQ ونبني الـpilot مع احتياجات مكتبك.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="trust">
+  <div class="wrap trust-grid">
+    <div class="reveal">
+      <span class="eyebrow on-light"><span class="dot"></span> تصميم الأمان المستهدف</span>
+      <h2 style="font-size:28px;font-weight:800;margin:16px 0 24px;color:var(--navy);">بياناتك، بياناتك بس</h2>
+      <div class="trust-list">
+        <div class="trust-item">
+          <div class="check"><svg viewBox="0 0 24 24" fill="none" stroke="#C9A870" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>
+          <div><h5>عزل كامل بين المكاتب</h5><p>كل مكتب له نطاق بيانات وصلاحيات مستقل يُفرض من الخادم في النسخة الفعلية.</p></div>
+        </div>
+        <div class="trust-item">
+          <div class="check"><svg viewBox="0 0 24 24" fill="none" stroke="#C9A870" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>
+          <div><h5>الموكّل يشوف اللي تسمحله بيه بس</h5><p>كل مستند وكل تحديث عليه تحكم منك — داخلي أو ظاهر للموكّل، أنت اللي بتقرر.</p></div>
+        </div>
+        <div class="trust-item">
+          <div class="check"><svg viewBox="0 0 24 24" fill="none" stroke="#C9A870" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>
+          <div><h5>نسخ احتياطي وتشفير</h5><p>جزء أساسي من خطة النسخة الفعلية، مع اختبار الاسترجاع وسجل تدقيق للعمليات الحساسة.</p></div>
+        </div>
+      </div>
+    </div>
+    <div class="trust-visual reveal">
+      <h4>مصمم لمحامي اليوم</h4>
+      <p>مش نسخة معرّبة من نظام أجنبي، ومش برنامج بيتحمّل على جهاز واحد. LAWRAQ بيتصمم من الصفر لطريقة شغل المكتب المصري — بالعربي، وبالجنيه.</p>
+      <span class="trust-badge">🇪🇬 مصمم ومبني في مصر</span>
+    </div>
+  </div>
+</section>
+
+<section class="waitlist" id="waitlist">
+  <div class="wrap waitlist-inner">
+    <span class="eyebrow"><span class="dot"></span> كن من الأوائل</span>
+    <h2>سجّل اهتمامك دلوقتي</h2>
+    <p class="lead">سيب بياناتك عشان نرتب جولة تناسب طريقة شغل مكتبك.</p>
+
+    <form class="waitlist-form" id="waitlistForm" action="https://formspree.io/f/YOUR_FORM_ID" method="POST">
+      <div class="form-row">
+        <div class="field">
+          <label for="name">الاسم</label>
+          <input type="text" id="name" name="name" placeholder="اسمك الكامل" required>
+        </div>
+        <div class="field">
+          <label for="phone">رقم التليفون</label>
+          <input type="tel" id="phone" name="phone" placeholder="01xxxxxxxxx" required dir="ltr" style="text-align:right;">
+        </div>
+      </div>
+      <div class="form-row" style="grid-template-columns:1fr;">
+        <div class="field">
+          <label for="office">نوع الشغل</label>
+          <select id="office" name="office_type">
+            <option value="محامي فردي">محامي فردي</option>
+            <option value="مكتب صغير (2-5)">مكتب صغير (٢-٥ محامين)</option>
+            <option value="مكتب متوسط (6-15)">مكتب متوسط (٦-١٥ محامي)</option>
+            <option value="مكتب كبير">مكتب أكبر من كده</option>
+          </select>
+        </div>
+      </div>
+      <button type="submit" class="submit-btn">سجّل اهتمامي</button>
+      <p class="form-fine">مش هيتم التواصل معاك إلا بخصوص LAWRAQ — من غير أي رسائل زيادة.</p>
+    </form>
+
+    <div class="success-msg" id="successMsg">
+      تم التسجيل بنجاح ✓ — هنكلّمك قريب جدًا.
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <div class="footer-inner">
+      <div class="footer-brand">
+        <svg width="28" height="28" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+          <rect x="2" y="2" width="44" height="44" rx="13" fill="#fff" fill-opacity=".06"/>
+          <path d="M15 11.5h12l7 7V36H15V11.5Z" stroke="#C9A870" stroke-width="2.2" stroke-linejoin="round"/>
+          <path d="M27 11.5v7h7M20 25h9M20 30h6" stroke="#C9A870" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span dir="ltr">LAWRAQ</span>
+      </div>
+      <div class="footer-links">
+        <a href="#pillars">المميزات</a>
+        <a href="#waitlist">سجّل اهتمامك</a>
+        <a href="https://wa.me/2001119155337" target="_blank" rel="noopener">تواصل عبر واتساب</a>
+      </div>
+    </div>
+    <div class="footer-bottom">© 2026 LAWRAQ — نموذج تجريبي لمنصة إدارة المكتب القانوني.</div>
+  </div>
+</footer>
+
+<script>
+  // scroll reveal
+  const els = document.querySelectorAll('.reveal');
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
+  }, {threshold:0.15});
+  els.forEach(el=>io.observe(el));
+
+  // Keep the hero demo date fresh whenever the landing page is opened.
+  const demoDate = new Date();
+  demoDate.setDate(demoDate.getDate() + 4);
+  const arDigits = (value) => String(value).replace(/\d/g, (digit) => '٠١٢٣٤٥٦٧٨٩'[digit]);
+  const arMonths = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+  document.getElementById('demoNextHearing').textContent =
+    `الجلسة القادمة: ${arDigits(demoDate.getDate())} ${arMonths[demoDate.getMonth()]}`;
+
+  // form submit (Formspree — see setup note in comments below)
+  const form = document.getElementById('waitlistForm');
+  const success = document.getElementById('successMsg');
+  form.addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const btn = form.querySelector('.submit-btn');
+    btn.disabled = true; btn.textContent = 'جاري التسجيل...';
+    try{
+      const res = await fetch(form.action, {
+        method:'POST',
+        body:new FormData(form),
+        headers:{ 'Accept':'application/json' }
+      });
+      if(res.ok){
+        form.style.display = 'none';
+        success.style.display = 'block';
+      } else {
+        throw new Error('submit failed');
+      }
+    } catch(err){
+      // fallback: open WhatsApp with prefilled message if form backend isn't configured yet
+      const name = document.getElementById('name').value;
+      const phone = document.getElementById('phone').value;
+      window.open(`https://wa.me/2001119155337?text=${encodeURIComponent('عايز أسجل اهتمامي بـ LAWRAQ — الاسم: '+name+' — التليفون: '+phone)}`, '_blank');
+      btn.disabled = false; btn.textContent = 'سجّل اهتمامي';
+    }
+  });
+</script>
+
+<!--
+  SETUP NOTE (remove this comment once configured):
+  1. Go to formspree.io, create a free account, create a new form.
+  2. Copy your form endpoint (looks like https://formspree.io/f/xxxxxxx).
+  3. Replace "YOUR_FORM_ID" in the <form action="..."> above with your real endpoint.
+  4. Until you do this, submissions will fail silently and fall back to opening
+     WhatsApp with the person's info pre-filled — a safety net, not the primary path.
+-->
+
+</body>
+</html>
