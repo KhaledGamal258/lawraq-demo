@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { upcomingHearings as upcomingHearingsDefault, getTeamMemberById } from '../data/clients';
 import { getUrgentDeadlines, getUrgencyStyle, formatDeadlineMessage } from '../utils/deadlines';
+import { toArNum } from '../utils/arabicDate';
 
 const OWNER_ID = 'nadine';
 
@@ -12,6 +13,8 @@ export default function LawyerDashboard({ lawyerName, onOpenCase, onOpenClients,
     : upcomingHearings;
 
   const urgentDeadlines = getUrgentDeadlines(allClients);
+  const activeClients = allClients.filter((client) => !client.archived);
+  const activeCases = activeClients.filter((client) => client.status !== 'منتهية');
 
   return (
     <div dir="rtl" style={{ fontFamily: "'Almarai',sans-serif", padding: '20px 16px 40px', display: 'flex', flexDirection: 'column', gap: 22 }}>
@@ -35,9 +38,9 @@ export default function LawyerDashboard({ lawyerName, onOpenCase, onOpenClients,
 
           <div style={{ display: 'flex', gap: 10 }}>
             {[
-              { value: '١٢', label: 'موكّل\nنشط' },
-              { value: '٨', label: 'قضية\nجارية' },
-              { value: '٣', label: 'جلسات\nهذا الأسبوع' },
+              { value: toArNum(activeClients.length), label: 'موكّل\nنشط' },
+              { value: toArNum(activeCases.length), label: 'قضية\nجارية' },
+              { value: toArNum(upcomingHearings.length), label: 'جلسات\nقادمة' },
             ].map((stat) => (
               <div key={stat.value} style={{ flex: 1, background: 'rgba(255,255,255,0.07)', borderRadius: 10, padding: '12px 8px', textAlign: 'center' }}>
                 <div style={{ color: '#C9A870', fontSize: 22, fontWeight: 800, lineHeight: 1 }}>{stat.value}</div>
@@ -97,11 +100,11 @@ export default function LawyerDashboard({ lawyerName, onOpenCase, onOpenClients,
         <div style={{ padding: '18px 20px 6px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
             <div>
-              <div style={{ color: '#C9A870', fontSize: 11, fontWeight: 700, letterSpacing: 0.8, marginBottom: 3 }}>هذا الأسبوع</div>
+              <div style={{ color: '#C9A870', fontSize: 11, fontWeight: 700, letterSpacing: 0.8, marginBottom: 3 }}>المواعيد الأقرب</div>
               <div style={{ color: '#fff', fontSize: 18, fontWeight: 800 }}>الجلسات القادمة</div>
             </div>
             <div style={{ background: 'rgba(201,168,112,0.12)', border: '1px solid rgba(201,168,112,0.22)', borderRadius: 20, padding: '4px 13px' }}>
-              <span style={{ color: '#C9A870', fontSize: 12, fontWeight: 700 }}>{displayedHearings.length} جلسات</span>
+              <span style={{ color: '#C9A870', fontSize: 12, fontWeight: 700 }}>{toArNum(displayedHearings.length)} جلسات</span>
             </div>
           </div>
 
@@ -132,7 +135,7 @@ export default function LawyerDashboard({ lawyerName, onOpenCase, onOpenClients,
 
           {displayedHearings.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '20px 16px', color: 'rgba(255,255,255,0.3)', fontSize: 13, paddingBottom: 26 }}>
-              لا توجد جلسات مسجلة باسمك هذا الأسبوع
+              لا توجد جلسات قادمة مسجلة باسمك
             </div>
           ) : (
             displayedHearings.map((h, idx) => {

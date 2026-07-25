@@ -169,7 +169,7 @@ export default function ClientsView({ onOpenCase, allClients = clientsDefault, o
                     >
                       {copiedId === c.id ? 'تم النسخ' : 'نسخ رابط الموكّل'}
                     </button>
-                    <WhatsAppButton compact onClick={onWhatsAppClick} />
+                    <WhatsAppButton compact disabled label="واتساب — قريبًا" onClick={onWhatsAppClick} />
                   </div>
                 </td>
               </tr>
@@ -217,7 +217,7 @@ export default function ClientsView({ onOpenCase, allClients = clientsDefault, o
               >
                 {copiedId === c.id ? 'تم النسخ' : 'نسخ رابط الموكّل'}
               </button>
-              <WhatsAppButton compact onClick={onWhatsAppClick} />
+              <WhatsAppButton compact disabled label="واتساب — قريبًا" onClick={onWhatsAppClick} />
             </div>
           </div>
         ))}

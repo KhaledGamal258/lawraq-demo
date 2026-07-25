@@ -205,7 +205,7 @@ export async function openMockDocument(doc) {
     return;
   }
   const blob = buildMockPdfBlob([
-    'MIZAN — Legal Practice Platform',
+    'LAWRAQ — Legal Practice Platform',
     `Document: ${name}`,
     `Date: ${date}`,
     '',

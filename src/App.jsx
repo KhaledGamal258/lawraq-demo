@@ -9,7 +9,7 @@ import AddClient from './screens/AddClient';
 import TeamView from './screens/TeamView';
 import InheritanceCalculator from './screens/InheritanceCalculator';
 import { clients as clientsData, getClientById, upcomingHearings as upcomingHearingsDefault, getCaseStatusOption, getTeamMemberById } from './data/clients';
-import { clearDemoStore, createDefaultCaseContent, loadDemoStore, saveDemoStore } from './data/demoStore';
+import { clearDemoStore, createDefaultCaseContent, DEMO_STORE_VERSION, loadDemoStore, saveDemoStore } from './data/demoStore';
 import { buildHearingObj, toArNum } from './utils/arabicDate';
 import { generateId } from './utils/id';
 
@@ -164,19 +164,32 @@ export default function App() {
   const [mode, setMode] = useState(scopedClientId ? 'client' : null);
   const [lawyerView, setLawyerView] = useState('dashboard');
   const [selectedClientId, setSelectedClientId] = useState(scopedClientId || 'ahmed');
+  const [initialDemoStore] = useState(loadDemoStore);
+  const restoredDemo = initialDemoStore.version === DEMO_STORE_VERSION ? initialDemoStore : {};
 
-  const [sessionsMap, setSessionsMap] = useState({});
-  const [hearingOverrides, setHearingOverrides] = useState({});
-  const [assignmentOverrides, setAssignmentOverrides] = useState({});
-  const [archiveOverrides, setArchiveOverrides] = useState({});
-  const [statusOverrides, setStatusOverrides] = useState({});
-  const [addedClients, setAddedClients] = useState([]);
-  const [caseContentMap, setCaseContentMap] = useState(loadDemoStore);
+  const [sessionsMap, setSessionsMap] = useState(restoredDemo.sessionsMap || {});
+  const [hearingOverrides, setHearingOverrides] = useState(restoredDemo.hearingOverrides || {});
+  const [assignmentOverrides, setAssignmentOverrides] = useState(restoredDemo.assignmentOverrides || {});
+  const [archiveOverrides, setArchiveOverrides] = useState(restoredDemo.archiveOverrides || {});
+  const [statusOverrides, setStatusOverrides] = useState(restoredDemo.statusOverrides || {});
+  const [addedClients, setAddedClients] = useState(restoredDemo.addedClients || []);
+  const [caseContentMap, setCaseContentMap] = useState(restoredDemo.caseContentMap || {});
+  const [teamDiscussionsMap, setTeamDiscussionsMap] = useState(restoredDemo.teamDiscussionsMap || {});
   const [toast, setToast] = useState(null);
 
   useEffect(() => {
-    saveDemoStore(caseContentMap);
-  }, [caseContentMap]);
+    saveDemoStore({
+      version: DEMO_STORE_VERSION,
+      sessionsMap,
+      hearingOverrides,
+      assignmentOverrides,
+      archiveOverrides,
+      statusOverrides,
+      addedClients,
+      caseContentMap,
+      teamDiscussionsMap,
+    });
+  }, [sessionsMap, hearingOverrides, assignmentOverrides, archiveOverrides, statusOverrides, addedClients, caseContentMap, teamDiscussionsMap]);
 
   const showToast = (msg) => {
     setToast(msg);
@@ -226,13 +239,34 @@ export default function App() {
     return [...dynamic, ...base];
   };
 
-  const getCaseContent = (clientId) => caseContentMap[clientId] || createDefaultCaseContent();
+  const createCaseContentFor = (clientId) => createDefaultCaseContent(findBaseClient(clientId));
+
+  const getCaseContent = (clientId) => caseContentMap[clientId] || createCaseContentFor(clientId);
 
   const updateCaseContent = (clientId, updater) => {
     setCaseContentMap((prev) => {
-      const current = prev[clientId] || createDefaultCaseContent();
+      const current = prev[clientId] || createCaseContentFor(clientId);
       return { ...prev, [clientId]: updater(current) };
     });
+  };
+
+  const getTeamDiscussion = (clientId) => {
+    if (teamDiscussionsMap[clientId]) return teamDiscussionsMap[clientId];
+    return (findBaseClient(clientId)?.teamDiscussion || []).map((message, index) => (
+      message.id ? message : { ...message, id: `team-${clientId}-${index}` }
+    ));
+  };
+
+  const handleTeamMessage = (clientId, text) => {
+    const cleanText = text.trim();
+    if (!cleanText) return;
+    setTeamDiscussionsMap((prev) => ({
+      ...prev,
+      [clientId]: [
+        ...(prev[clientId] || getTeamDiscussion(clientId)),
+        { id: generateId('team-msg'), from: 'nadine', text: cleanText, time: 'الآن' },
+      ],
+    }));
   };
 
   const handleToggleDocument = (clientId, documentId) => {
@@ -257,6 +291,23 @@ export default function App() {
       };
     });
     showToast('تم تنفيذ الإجراء وتسجيله تلقائيًا');
+  };
+
+  const handleAddDocument = (clientId, document) => {
+    updateCaseContent(clientId, (content) => ({
+      ...content,
+      docs: [document, ...content.docs],
+      updates: [
+        createAutomaticActivity({
+          title: 'تمت إضافة مستند إلى القضية',
+          desc: `أضيف «${document.name}» إلى ملف القضية للاستخدام الداخلي.`,
+          visible: false,
+          dotColor: '#1C2D4F',
+        }),
+        ...content.updates,
+      ],
+    }));
+    showToast('تمت إضافة المستند إلى ملف القضية');
   };
 
   const handleToggleUpdate = (clientId, updateId) => {
@@ -321,6 +372,7 @@ export default function App() {
     setArchiveOverrides({});
     setStatusOverrides({});
     setAddedClients([]);
+    setTeamDiscussionsMap({});
   };
 
   const handleAddClient = (form) => {
@@ -458,6 +510,22 @@ export default function App() {
   }
 
   if (mode === 'client') {
+    const portalClient = getMergedClient(selectedClientId);
+    if (!portalClient) {
+      return (
+        <div dir="rtl" style={{ minHeight: '100vh', background: '#F6F4F0', display: 'grid', placeItems: 'center', padding: 24, fontFamily: "'Almarai',sans-serif" }}>
+          <div style={{ maxWidth: 440, background: '#fff', border: '1px solid #E8E4DC', borderRadius: 18, padding: '28px 24px', textAlign: 'center', boxShadow: '0 8px 28px rgba(28,45,79,0.08)' }}>
+            <BrandLogo />
+            <div style={{ color: '#1C2D4F', fontSize: 20, fontWeight: 800, marginTop: 20 }}>رابط الموكّل غير صالح</div>
+            <div style={{ color: '#7B8494', fontSize: 13, lineHeight: 1.8, marginTop: 9 }}>راجع الرابط المرسل من المكتب أو اطلب رابطًا جديدًا.</div>
+            <button type="button" onClick={goHome} style={{ marginTop: 18, background: '#1C2D4F', color: '#C9A870', border: 'none', borderRadius: 20, padding: '9px 18px', fontFamily: "'Almarai',sans-serif", fontWeight: 800, cursor: 'pointer' }}>
+              الرجوع إلى البداية
+            </button>
+          </div>
+        </div>
+      );
+    }
+    const portalLawyer = getTeamMemberById(portalClient.assignedTo)?.name || LAWYER_NAME;
     return (
       <div style={{ minHeight: '100vh', background: '#D9D4CB' }}>
         {!scopedClientId && (
@@ -472,8 +540,8 @@ export default function App() {
           </div>
         )}
         <ClientPortal
-          client={getMergedClient(selectedClientId)}
-          lawyerName={LAWYER_NAME}
+          client={portalClient}
+          lawyerName={portalLawyer}
           latestSession={getMergedSessions(selectedClientId)[0]}
           caseContent={getCaseContent(selectedClientId)}
           onSendMessage={(text) => handleCaseMessage(selectedClientId, 'client', text)}
@@ -511,6 +579,9 @@ export default function App() {
         onRestore={() => handleRestore(selectedClientId)}
         onStatusChange={(newStatus) => handleStatusChange(selectedClientId, newStatus)}
         caseContent={getCaseContent(selectedClientId)}
+        teamMessages={getTeamDiscussion(selectedClientId)}
+        onSendTeamMessage={(text) => handleTeamMessage(selectedClientId, text)}
+        onAddDocument={(document) => handleAddDocument(selectedClientId, document)}
         onToggleDocument={(documentId) => handleToggleDocument(selectedClientId, documentId)}
         onToggleUpdate={(updateId) => handleToggleUpdate(selectedClientId, updateId)}
         onAddManualUpdate={(update) => handleAddManualUpdate(selectedClientId, update)}

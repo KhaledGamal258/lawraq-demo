@@ -9,15 +9,22 @@ const FRACTION_NAMES = {
   '2/3': 'الثلثان',
 };
 
-function gcd(a, b) {
-  return b === 0 ? a : gcd(b, a % b);
-}
-
 function formatFraction(num, den) {
   if (num <= 0) return { text: '—', pct: 0 };
-  const g = gcd(Math.round(num * 1e6), Math.round(den * 1e6)) || 1;
-  const n = Math.round((num * 1e6) / g);
-  const d = Math.round((den * 1e6) / g);
+  const value = num / den;
+  let n = 0;
+  let d = 1;
+  let bestError = Number.POSITIVE_INFINITY;
+  for (let candidateDen = 1; candidateDen <= 96; candidateDen += 1) {
+    const candidateNum = Math.round(value * candidateDen);
+    const error = Math.abs(value - candidateNum / candidateDen);
+    if (error < bestError) {
+      n = candidateNum;
+      d = candidateDen;
+      bestError = error;
+    }
+    if (error < 1e-9) break;
+  }
   const key = `${n}/${d}`;
   const name = FRACTION_NAMES[key];
   const pct = (num / den) * 100;
@@ -28,7 +35,7 @@ function formatFraction(num, den) {
 // Simplified fixed-share calculator for common cases only — see disclaimer.
 // Does not implement hijab, awl/radd, grandparents, siblings, or multi-wife splitting.
 export function calculateInheritance({ deceasedGender, estateAmount, hasFather, hasMother, hasSpouse, numSons, numDaughters }) {
-  const estate = Number(estateAmount) || 0;
+  const estate = Math.max(0, Number(estateAmount) || 0);
   const sons = Math.max(0, Number(numSons) || 0);
   const daughters = Math.max(0, Number(numDaughters) || 0);
   const hasSons = sons > 0;
@@ -80,13 +87,13 @@ export function calculateInheritance({ deceasedGender, estateAmount, hasFather, 
     if (totalShares > 0) {
       const sonFractionEach = (remainder * 2) / totalShares;
       const daughterFractionEach = (remainder * 1) / totalShares;
-      addRow('الأبناء (لكل ابن)', sonFractionEach * sons, sons);
-      if (hasDaughters) addRow('البنات (لكل بنت)', daughterFractionEach * daughters, daughters);
+      addRow(sons === 1 ? 'الابن' : 'الأبناء', sonFractionEach * sons, sons);
+      if (hasDaughters) addRow(daughters === 1 ? 'البنت' : 'البنات', daughterFractionEach * daughters, daughters);
     }
   } else if (hasDaughters) {
     // Daughters only, no sons: fixed Quranic share for daughters.
     const daughtersFixedTotal = daughters === 1 ? 1 / 2 : 2 / 3;
-    addRow(daughters === 1 ? 'البنت' : 'البنات (لكل بنت)', daughtersFixedTotal, daughters);
+    addRow(daughters === 1 ? 'البنت' : 'البنات', daughtersFixedTotal, daughters);
 
     if (hasFather) {
       const fatherFraction = Math.max(0, 1 - spouseFraction - motherFraction - daughtersFixedTotal);

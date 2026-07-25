@@ -5,11 +5,18 @@ import { buildDateObj } from '../utils/arabicDate';
 const fieldLabelStyle = { color: '#1C2D4F', fontSize: 12.5, fontWeight: 700, marginBottom: 7 };
 const fieldBoxStyle = { width: '100%', background: '#fff', border: '1.5px solid #E8E4DC', borderRadius: 10, padding: '12px 14px', fontFamily: "'Almarai',sans-serif", fontSize: 13.5, color: '#1C2D4F', boxSizing: 'border-box', outline: 'none' };
 
-function SelectField({ label, value, onChange, options, placeholder }) {
+function isoDaysFromToday(days) {
+  const date = new Date();
+  date.setHours(12, 0, 0, 0);
+  date.setDate(date.getDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+function SelectField({ id, label, value, onChange, options, placeholder }) {
   return (
     <div style={{ marginBottom: 14 }}>
-      <div style={fieldLabelStyle}>{label}</div>
-      <select value={value} onChange={onChange} style={{ ...fieldBoxStyle, cursor: 'pointer', appearance: 'auto' }}>
+      <label htmlFor={id} style={{ ...fieldLabelStyle, display: 'block' }}>{label}</label>
+      <select id={id} value={value} onChange={onChange} style={{ ...fieldBoxStyle, cursor: 'pointer', appearance: 'auto' }}>
         <option value="">{placeholder}</option>
         {options.map((opt) => (
           <option key={opt} value={opt}>{opt}</option>
@@ -20,16 +27,16 @@ function SelectField({ label, value, onChange, options, placeholder }) {
 }
 
 export default function AddClient({ onBack, onSubmit }) {
-  const [name, setName] = useState('أحمد محمود الشريف');
-  const [phone, setPhone] = useState('0122 345 6789');
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
-  const [caseTitle, setCaseTitle] = useState('قضية تعويض عمالي');
-  const [caseType, setCaseType] = useState('عمالية');
-  const [court, setCourt] = useState('محكمة استئناف القاهرة');
-  const [governorate, setGovernorate] = useState('القاهرة');
-  const [hearingDate, setHearingDate] = useState('2026-06-28');
+  const [caseTitle, setCaseTitle] = useState('');
+  const [caseType, setCaseType] = useState('');
+  const [court, setCourt] = useState('');
+  const [governorate, setGovernorate] = useState('');
+  const [hearingDate, setHearingDate] = useState(() => isoDaysFromToday(7));
 
-  const canSubmit = name.trim() && caseTitle.trim() && caseType && court && governorate;
+  const canSubmit = name.trim() && phone.trim() && caseTitle.trim() && caseType && court && governorate && hearingDate;
 
   const handleSubmit = () => {
     if (!canSubmit) return;
@@ -52,7 +59,7 @@ export default function AddClient({ onBack, onSubmit }) {
         </button>
         <div style={{ flex: 1, textAlign: 'center' }}>
           <div style={{ color: 'rgba(255,255,255,0.38)', fontSize: 10.5, marginBottom: 2 }}>الموكّلون</div>
-          <div style={{ color: '#fff', fontSize: 15, fontWeight: 800 }}>إضافة موكّل جديد</div>
+          <div style={{ color: '#fff', fontSize: 15, fontWeight: 800 }}>إضافة موكّل وقضية</div>
         </div>
         <button
           type="button"
@@ -74,8 +81,9 @@ export default function AddClient({ onBack, onSubmit }) {
           </div>
 
           <div style={{ marginBottom: 14 }}>
-            <div style={fieldLabelStyle}>الاسم الكامل</div>
+            <label htmlFor="client-name" style={{ ...fieldLabelStyle, display: 'block' }}>الاسم الكامل</label>
             <input
+              id="client-name"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
@@ -84,10 +92,11 @@ export default function AddClient({ onBack, onSubmit }) {
           </div>
 
           <div style={{ marginBottom: 14 }}>
-            <div style={fieldLabelStyle}>رقم الهاتف</div>
+            <label htmlFor="client-phone" style={{ ...fieldLabelStyle, display: 'block' }}>رقم الهاتف</label>
             <div style={{ display: 'flex', border: '1.5px solid #E8E4DC', borderRadius: 10, overflow: 'hidden' }}>
               <div style={{ padding: '12px 14px', background: '#F6F4F0', borderLeft: '1.5px solid #E8E4DC', color: '#5D6579', fontSize: 13.5, fontWeight: 700, whiteSpace: 'nowrap', flexShrink: 0 }}>+٢٠</div>
               <input
+                id="client-phone"
                 type="tel"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
@@ -98,10 +107,11 @@ export default function AddClient({ onBack, onSubmit }) {
 
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 7 }}>
-              <span style={{ color: '#1C2D4F', fontSize: 12.5, fontWeight: 700 }}>البريد الإلكتروني</span>
+              <label htmlFor="client-email" style={{ color: '#1C2D4F', fontSize: 12.5, fontWeight: 700 }}>البريد الإلكتروني</label>
               <span style={{ background: 'rgba(28,45,79,0.07)', color: '#9BA3AF', fontSize: 10, fontWeight: 700, borderRadius: 5, padding: '2px 7px', lineHeight: 1.5 }}>اختياري</span>
             </div>
             <input
+              id="client-email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -119,8 +129,9 @@ export default function AddClient({ onBack, onSubmit }) {
           </div>
 
           <div style={{ marginBottom: 14 }}>
-            <div style={fieldLabelStyle}>عنوان القضية</div>
+            <label htmlFor="case-title" style={{ ...fieldLabelStyle, display: 'block' }}>عنوان القضية</label>
             <input
+              id="case-title"
               type="text"
               value={caseTitle}
               onChange={(e) => setCaseTitle(e.target.value)}
@@ -128,15 +139,17 @@ export default function AddClient({ onBack, onSubmit }) {
             />
           </div>
 
-          <SelectField label="نوع القضية" value={caseType} onChange={(e) => setCaseType(e.target.value)} options={caseTypes} placeholder="اختر نوع القضية" />
-          <SelectField label="المحكمة" value={court} onChange={(e) => setCourt(e.target.value)} options={courts} placeholder="اختر المحكمة" />
-          <SelectField label="المحافظة" value={governorate} onChange={(e) => setGovernorate(e.target.value)} options={governorates} placeholder="اختر المحافظة" />
+          <SelectField id="case-type" label="نوع القضية" value={caseType} onChange={(e) => setCaseType(e.target.value)} options={caseTypes} placeholder="اختر نوع القضية" />
+          <SelectField id="case-court" label="المحكمة" value={court} onChange={(e) => setCourt(e.target.value)} options={courts} placeholder="اختر المحكمة" />
+          <SelectField id="case-governorate" label="المحافظة" value={governorate} onChange={(e) => setGovernorate(e.target.value)} options={governorates} placeholder="اختر المحافظة" />
 
           <div>
-            <div style={fieldLabelStyle}>موعد الجلسة القادمة</div>
+            <label htmlFor="next-hearing-date" style={{ ...fieldLabelStyle, display: 'block' }}>موعد الجلسة القادمة</label>
             <div style={{ position: 'relative' }}>
               <input
+                id="next-hearing-date"
                 type="date"
+                min={new Date().toISOString().slice(0, 10)}
                 value={hearingDate}
                 onChange={(e) => setHearingDate(e.target.value)}
                 style={{ ...fieldBoxStyle, cursor: 'pointer' }}
@@ -158,7 +171,7 @@ export default function AddClient({ onBack, onSubmit }) {
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
             <path d="M20 6L9 17l-5-5" stroke={canSubmit ? '#C9A870' : '#B2B8C2'} strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-          <span style={{ color: canSubmit ? '#C9A870' : '#B2B8C2', fontSize: 16, fontWeight: 800, lineHeight: 1 }}>إضافة الموكّل</span>
+          <span style={{ color: canSubmit ? '#C9A870' : '#B2B8C2', fontSize: 16, fontWeight: 800, lineHeight: 1 }}>إضافة القضية والموكّل</span>
         </button>
 
         <div style={{ height: 40 }} />

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { team, getTeamMemberById, CASE_STATUS_OPTIONS } from '../data/clients';
 import { buildDateObj } from '../utils/arabicDate';
 import { openMockDocument, getFileTypeLabel } from '../utils/mockFiles';
@@ -58,6 +58,9 @@ export default function CasePage({
   onRestore,
   onStatusChange,
   caseContent,
+  teamMessages = [],
+  onSendTeamMessage,
+  onAddDocument,
   onToggleDocument,
   onToggleUpdate,
   onAddManualUpdate,
@@ -71,9 +74,6 @@ export default function CasePage({
   const updates = caseContent.updates;
   const messages = caseContent.messages;
   const [replyText, setReplyText] = useState('');
-  const [teamMessages, setTeamMessages] = useState(() =>
-    (client.teamDiscussion || []).map((m) => (m.id ? m : { ...m, id: generateId('team-msg') }))
-  );
   const [teamReplyText, setTeamReplyText] = useState('');
 
   const [reassignOpen, setReassignOpen] = useState(false);
@@ -92,6 +92,11 @@ export default function CasePage({
   const [editingUpdateId, setEditingUpdateId] = useState(null);
   const [editUpdateTitle, setEditUpdateTitle] = useState('');
   const [editUpdateDesc, setEditUpdateDesc] = useState('');
+  const uploadInputRef = useRef(null);
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const sessionDateValid = !!formDate && formDate <= todayIso;
+  const canSaveSession = sessionDateValid && !!formDecision.trim();
+  const scheduledHearingIsFuture = !!client.nextHearing?.iso && client.nextHearing.iso > todayIso;
 
   const showFinishPrompt = client.status === 'منتهية' && !archived && !finishPromptDismissed;
 
@@ -132,13 +137,13 @@ export default function CasePage({
   const onSendTeamReply = () => {
     const text = teamReplyText.trim();
     if (!text) return;
-    setTeamMessages([...teamMessages, { id: generateId('team-msg'), from: 'nadine', text, time: 'الآن' }]);
+    onSendTeamMessage(text);
     setTeamReplyText('');
   };
 
   const handleSaveSession = () => {
-    if (!formDecision.trim()) return;
-    const dateObj = formDate ? buildDateObj(formDate) : { day: '', month: '', full: 'تاريخ غير محدد' };
+    if (!canSaveSession) return;
+    const dateObj = buildDateObj(formDate);
     const nextHearingObj = formNextDate ? buildDateObj(formNextDate) : null;
     const newSession = {
       id: generateId('session'),
@@ -158,7 +163,7 @@ export default function CasePage({
       cancelForm();
       return;
     }
-    setFormDate(client.nextHearing?.iso || '');
+    setFormDate(client.nextHearing?.iso && client.nextHearing.iso <= todayIso ? client.nextHearing.iso : '');
     setShowAddForm(true);
   };
 
@@ -194,6 +199,23 @@ export default function CasePage({
     setEditingUpdateId(null);
     setEditUpdateTitle('');
     setEditUpdateDesc('');
+  };
+
+  const handleDocumentSelected = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    const extension = file.name.split('.').pop()?.toLowerCase();
+    const type = extension === 'doc' || extension === 'docx' ? 'word' : file.type.startsWith('image/') ? 'image' : 'pdf';
+    const sizeMb = file.size / (1024 * 1024);
+    onAddDocument({
+      id: generateId('doc'),
+      name: file.name.replace(/\.[^/.]+$/, ''),
+      date: 'الآن',
+      size: sizeMb >= 0.1 ? `${sizeMb.toFixed(1)} MB` : `${Math.max(1, Math.round(file.size / 1024))} KB`,
+      visible: false,
+      type,
+    });
+    event.target.value = '';
   };
 
   const inputStyle = {
@@ -352,7 +374,7 @@ export default function CasePage({
                 <div style={{ color: 'rgba(255,255,255,0.32)', fontSize: 9.5, marginBottom: 3 }}>الجلسة القادمة</div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 7, justifyContent: 'flex-end' }}>
                   <div style={{ color: '#C9A870', fontSize: 14, fontWeight: 800, lineHeight: 1 }}>{client.nextHearing.full}</div>
-                  <WhatsAppButton compact onClick={onWhatsAppClick} />
+                  <WhatsAppButton compact disabled label="واتساب — قريبًا" onClick={onWhatsAppClick} />
                 </div>
               </div>
             </div>
@@ -587,6 +609,11 @@ export default function CasePage({
                 <div style={{ color: '#7B8494', fontSize: 10.5, lineHeight: 1.6, marginBottom: 12 }}>
                   بعد انتهاء الجلسة، سجّل قرار المحكمة. الموعد المسجل مسبقًا يظهر تلقائيًا، وأضف الموعد التالي فقط إذا حددته المحكمة.
                 </div>
+                {scheduledHearingIsFuture && (
+                  <div style={{ color: '#8A6D2F', background: 'rgba(201,168,112,0.11)', border: '1px solid rgba(201,168,112,0.3)', borderRadius: 9, padding: '8px 10px', fontSize: 10.5, lineHeight: 1.6, marginBottom: 10 }}>
+                    الجلسة المجدولة بتاريخ {client.nextHearing.full} لم يحن موعدها بعد، لذلك لم يملأها النظام كنتيجة جلسة منتهية.
+                  </div>
+                )}
                 <div style={{ display: 'flex', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
                   <div style={{ flex: '1 1 140px' }}>
                     <div style={{ color: '#6B7484', fontSize: 11, fontWeight: 700, marginBottom: 5 }}>تاريخ الجلسة التي انتهت</div>
@@ -596,10 +623,14 @@ export default function CasePage({
                       onChange={(e) => setFormDate(e.target.value)}
                       onInput={(e) => setFormDate(e.currentTarget.value)}
                       aria-label="تاريخ الجلسة التي انتهت"
+                      max={todayIso}
                       style={inputStyle}
                     />
-                    {client.nextHearing?.iso && (
+                    {formDate && client.nextHearing?.iso === formDate && (
                       <div style={{ color: '#16A34A', fontSize: 9.5, marginTop: 4 }}>✓ تم ملؤه من جدول الجلسات</div>
+                    )}
+                    {formDate && !sessionDateValid && (
+                      <div style={{ color: '#C2413B', fontSize: 9.5, marginTop: 4 }}>لا يمكن تسجيل نتيجة جلسة بتاريخ مستقبلي</div>
                     )}
                   </div>
                   <div style={{ flex: '1 1 140px' }}>
@@ -623,6 +654,7 @@ export default function CasePage({
                     value={formDecision}
                     onChange={(e) => setFormDecision(e.target.value)}
                     rows={3}
+                    aria-label="قرار الجلسة"
                     placeholder="اكتب قرار المحكمة في هذه الجلسة..."
                     style={{ ...inputStyle, resize: 'none', lineHeight: 1.6 }}
                   />
@@ -639,17 +671,17 @@ export default function CasePage({
                   <button
                     type="button"
                     onClick={handleSaveSession}
-                    disabled={!formDecision.trim()}
+                    disabled={!canSaveSession}
                     style={{
-                      background: formDecision.trim() ? '#1C2D4F' : '#E8E4DC',
-                      color: formDecision.trim() ? '#C9A870' : '#B2B8C2',
+                      background: canSaveSession ? '#1C2D4F' : '#E8E4DC',
+                      color: canSaveSession ? '#C9A870' : '#B2B8C2',
                       border: 'none',
                       borderRadius: 20,
                       padding: '8px 18px',
                       fontSize: 13,
                       fontWeight: 700,
                       fontFamily: "'Almarai',sans-serif",
-                      cursor: formDecision.trim() ? 'pointer' : 'not-allowed',
+                      cursor: canSaveSession ? 'pointer' : 'not-allowed',
                     }}
                   >
                     حفظ نتيجة الجلسة
@@ -714,13 +746,14 @@ export default function CasePage({
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 13, padding: '0 2px' }}>
               <span style={{ color: '#1C2D4F', fontSize: 16, fontWeight: 800 }}>المستندات</span>
               {!archived && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(28,45,79,0.07)', borderRadius: 20, padding: '6px 13px', cursor: 'pointer' }}>
+                <button type="button" onClick={() => uploadInputRef.current?.click()} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(28,45,79,0.07)', border: 'none', borderRadius: 20, padding: '6px 13px', cursor: 'pointer', fontFamily: "'Almarai',sans-serif" }}>
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
                     <path d="M12 5v14M5 12h14" stroke="#1C2D4F" strokeWidth="2.2" strokeLinecap="round" />
                   </svg>
                   <span style={{ color: '#1C2D4F', fontSize: 12, fontWeight: 700, opacity: 0.65 }}>رفع مستند</span>
-                </div>
+                </button>
               )}
+              <input ref={uploadInputRef} type="file" accept=".pdf,.doc,.docx,.jpg,.jpeg,.png" onChange={handleDocumentSelected} style={{ display: 'none' }} aria-label="اختيار مستند للرفع" />
             </div>
 
             <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 2px 16px rgba(0,0,0,0.05)', overflow: 'hidden' }}>

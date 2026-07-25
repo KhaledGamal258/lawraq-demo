@@ -467,7 +467,7 @@ export const governorates = [
 ];
 
 export function getClientById(id) {
-  return clients.find((c) => c.id === id) || clients[0];
+  return clients.find((c) => c.id === id);
 }
 
 export const upcomingHearings = ['ahmed', 'mona', 'sara'].map(getClientById);

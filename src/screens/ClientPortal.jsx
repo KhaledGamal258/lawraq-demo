@@ -1,5 +1,7 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import BrandLogo from '../components/BrandLogo';
+import { openMockDocument } from '../utils/mockFiles';
+import { toArNum } from '../utils/arabicDate';
 
 function FileIcon() {
   return (
@@ -20,16 +22,13 @@ function FileIcon() {
 export default function ClientPortal({ client, lawyerName, latestSession, caseContent, onSendMessage }) {
   const [messageText, setMessageText] = useState('');
   const [messageSent, setMessageSent] = useState(false);
+  const messageInputRef = useRef(null);
   const docs = caseContent.docs.filter((doc) => doc.visible);
   const visibleUpdates = caseContent.updates.filter((item) => item.visible);
   const messages = caseContent.messages;
+  const caseEnded = client.status === 'منتهية' || client.archived || !client.nextHearing?.day;
 
-  const displayedUpdates = latestSession
-    ? [
-        { title: 'قرار الجلسة الأخيرة', desc: latestSession.decision, date: latestSession.date.full, dot: '#C9A870' },
-        ...visibleUpdates.map((item) => ({ ...item, dot: item.dotColor })),
-      ]
-    : visibleUpdates.map((item) => ({ ...item, dot: item.dotColor }));
+  const displayedUpdates = visibleUpdates.map((item) => ({ ...item, dot: item.dotColor }));
 
   const onSend = () => {
     if (!messageText.trim()) return;
@@ -74,7 +73,7 @@ export default function ClientPortal({ client, lawyerName, latestSession, caseCo
             {/* Stage tracker */}
             <div style={{ position: 'relative', paddingBottom: 2 }}>
               <div style={{ position: 'absolute', top: 4.5, right: '12.5%', left: '12.5%', height: 1.5, background: 'rgba(255,255,255,0.13)', borderRadius: 2 }} />
-              <div style={{ position: 'absolute', top: 4.5, right: '12.5%', width: '50%', height: 1.5, background: 'rgba(255,255,255,0.5)', borderRadius: 2 }} />
+              <div style={{ position: 'absolute', top: 4.5, right: '12.5%', width: caseEnded ? '75%' : '50%', height: 1.5, background: 'rgba(255,255,255,0.5)', borderRadius: 2 }} />
               <div style={{ display: 'flex', position: 'relative', zIndex: 1 }}>
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 9 }}>
                   <div style={{ width: 10, height: 10, borderRadius: '50%', background: 'rgba(255,255,255,0.82)' }} />
@@ -85,12 +84,12 @@ export default function ClientPortal({ client, lawyerName, latestSession, caseCo
                   <div style={{ color: 'rgba(255,255,255,0.38)', fontSize: 9, textAlign: 'center', lineHeight: 1.5 }}>مذكرة<br />الدفاع</div>
                 </div>
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 9 }}>
-                  <div style={{ width: 12, height: 12, borderRadius: '50%', background: '#C9A870', marginTop: -1, animation: 'dotGlow 2.2s ease-in-out infinite' }} />
-                  <div style={{ color: '#C9A870', fontSize: 9, textAlign: 'center', lineHeight: 1.5, fontWeight: 700 }}>الجلسة<br />القادمة</div>
+                  <div style={{ width: caseEnded ? 10 : 12, height: caseEnded ? 10 : 12, borderRadius: '50%', background: caseEnded ? 'rgba(255,255,255,0.82)' : '#C9A870', marginTop: caseEnded ? 0 : -1, animation: caseEnded ? 'none' : 'dotGlow 2.2s ease-in-out infinite' }} />
+                  <div style={{ color: caseEnded ? 'rgba(255,255,255,0.38)' : '#C9A870', fontSize: 9, textAlign: 'center', lineHeight: 1.5, fontWeight: caseEnded ? 400 : 700 }}>الجلسة<br />الأخيرة</div>
                 </div>
                 <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 9 }}>
-                  <div style={{ width: 10, height: 10, borderRadius: '50%', background: 'transparent', border: '1.5px solid rgba(255,255,255,0.18)' }} />
-                  <div style={{ color: 'rgba(255,255,255,0.2)', fontSize: 9, textAlign: 'center', lineHeight: 1.5 }}>الحكم</div>
+                  <div style={{ width: caseEnded ? 12 : 10, height: caseEnded ? 12 : 10, borderRadius: '50%', background: caseEnded ? '#C9A870' : 'transparent', border: caseEnded ? 'none' : '1.5px solid rgba(255,255,255,0.18)', marginTop: caseEnded ? -1 : 0, animation: caseEnded ? 'dotGlow 2.2s ease-in-out infinite' : 'none' }} />
+                  <div style={{ color: caseEnded ? '#C9A870' : 'rgba(255,255,255,0.2)', fontSize: 9, textAlign: 'center', lineHeight: 1.5, fontWeight: caseEnded ? 700 : 400 }}>الحكم</div>
                 </div>
               </div>
             </div>
@@ -99,9 +98,11 @@ export default function ClientPortal({ client, lawyerName, latestSession, caseCo
 
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
               <div>
-                <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, marginBottom: 5 }}>الجلسة القادمة</div>
-                <div style={{ color: '#C9A870', fontSize: 22, fontWeight: 800, lineHeight: 1 }}>{client.nextHearing.full}</div>
-                <div style={{ color: 'rgba(255,255,255,0.36)', fontSize: 12, marginTop: 4 }}>{client.nextHearing.dayOfWeek} · الساعة {client.nextHearing.time}</div>
+                <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11, marginBottom: 5 }}>{caseEnded ? 'حالة الملف' : 'الجلسة القادمة'}</div>
+                <div style={{ color: '#C9A870', fontSize: 22, fontWeight: 800, lineHeight: 1 }}>{caseEnded ? 'انتهت القضية' : client.nextHearing.full}</div>
+                <div style={{ color: 'rgba(255,255,255,0.36)', fontSize: 12, marginTop: 5 }}>
+                  {caseEnded ? `آخر إجراء: ${latestSession?.date?.full || 'تم إغلاق الملف'}` : `${client.nextHearing.dayOfWeek} · الساعة ${client.nextHearing.time}`}
+                </div>
               </div>
               <div style={{ width: 50, height: 50, borderRadius: 12, background: 'rgba(201,168,112,0.1)', border: '1px solid rgba(201,168,112,0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
@@ -130,6 +131,10 @@ export default function ClientPortal({ client, lawyerName, latestSession, caseCo
               </div>
               <button
                 type="button"
+                onClick={() => {
+                  messageInputRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  setTimeout(() => messageInputRef.current?.focus(), 250);
+                }}
                 style={{ background: 'rgba(201,168,112,0.14)', border: '1px solid rgba(201,168,112,0.3)', borderRadius: 20, padding: '7px 16px', color: '#C9A870', fontSize: 12, fontWeight: 700, fontFamily: "'Almarai',sans-serif", cursor: 'pointer', lineHeight: 1 }}
               >
                 تواصل
@@ -142,7 +147,7 @@ export default function ClientPortal({ client, lawyerName, latestSession, caseCo
         <div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 13, padding: '0 2px' }}>
             <span style={{ color: '#1C2D4F', fontSize: 16, fontWeight: 800 }}>المستندات المشتركة</span>
-            <span style={{ color: '#C9A870', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>عرض الكل</span>
+            <span style={{ color: '#9BA3AF', fontSize: 11.5, fontWeight: 700 }}>{docs.length === 1 ? 'مستند واحد' : `${toArNum(docs.length)} مستندات`}</span>
           </div>
           <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 2px 16px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
             {docs.length === 0 && (
@@ -151,9 +156,12 @@ export default function ClientPortal({ client, lawyerName, latestSession, caseCo
               </div>
             )}
             {docs.map((doc, idx) => (
-              <div
+              <button
+                type="button"
                 key={doc.name}
-                style={{ display: 'flex', alignItems: 'center', gap: 13, padding: '14px 15px', borderBottom: idx < docs.length - 1 ? '1px solid #F0ECE5' : 'none' }}
+                onClick={() => openMockDocument(doc)}
+                aria-label={doc.type === 'word' ? `تحميل ${doc.name}` : `فتح ${doc.name}`}
+                style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 13, padding: '14px 15px', border: 'none', borderBottom: idx < docs.length - 1 ? '1px solid #F0ECE5' : 'none', background: '#fff', textAlign: 'right', fontFamily: "'Almarai',sans-serif", cursor: 'pointer' }}
               >
                 <div style={{ width: 40, height: 40, borderRadius: 10, background: 'rgba(28,45,79,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                   <FileIcon />
@@ -166,7 +174,7 @@ export default function ClientPortal({ client, lawyerName, latestSession, caseCo
                   <path d="M12 16V4M12 16l-4-4M12 16l4-4" stroke="#C9A870" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                   <path d="M4 20h16" stroke="#C9A870" strokeWidth="1.8" strokeLinecap="round" />
                 </svg>
-              </div>
+              </button>
             ))}
           </div>
         </div>
@@ -182,7 +190,7 @@ export default function ClientPortal({ client, lawyerName, latestSession, caseCo
               const isLast = idx === displayedUpdates.length - 1;
               return (
                 <div
-                  key={upd.title}
+                  key={upd.id || `${upd.title}-${idx}`}
                   style={{
                     display: 'flex',
                     alignItems: 'flex-start',
@@ -245,6 +253,7 @@ export default function ClientPortal({ client, lawyerName, latestSession, caseCo
             </div>
 
             <textarea
+              ref={messageInputRef}
               value={messageText}
               onChange={(e) => {
                 setMessageText(e.target.value);

@@ -14,6 +14,7 @@ function SegToggle({ options, value, onChange }) {
           key={opt.value}
           type="button"
           onClick={() => onChange(opt.value)}
+          aria-pressed={value === opt.value}
           style={{
             background: value === opt.value ? '#1C2D4F' : 'transparent',
             border: 'none',
@@ -41,6 +42,7 @@ function HeirSwitch({ label, checked, onChange }) {
         type="button"
         onClick={() => onChange(!checked)}
         aria-label={label}
+        aria-pressed={checked}
         style={{
           width: 44,
           height: 26,
@@ -72,10 +74,12 @@ function HeirSwitch({ label, checked, onChange }) {
 }
 
 function NumberField({ label, value, onChange }) {
+  const inputId = `inheritance-${label.includes('ذكور') ? 'sons' : 'daughters'}`;
   return (
     <div style={{ flex: 1 }}>
-      <div style={{ color: '#9BA3AF', fontSize: 11.5, fontWeight: 700, marginBottom: 6 }}>{label}</div>
+      <label htmlFor={inputId} style={{ display: 'block', color: '#9BA3AF', fontSize: 11.5, fontWeight: 700, marginBottom: 6 }}>{label}</label>
       <input
+        id={inputId}
         type="number"
         min="0"
         value={value}
@@ -111,10 +115,18 @@ export default function InheritanceCalculator() {
   const [numSons, setNumSons] = useState(2);
   const [numDaughters, setNumDaughters] = useState(1);
   const [result, setResult] = useState(null);
+  const [validationError, setValidationError] = useState('');
 
   const spouseLabel = deceasedGender === 'male' ? 'الزوجة (الأرملة)' : 'الزوج (الأرمل)';
 
   const onCalculate = () => {
+    const cleanEstate = Number(estateAmount);
+    if (!Number.isFinite(cleanEstate) || cleanEstate <= 0) {
+      setResult(null);
+      setValidationError('أدخل مبلغ تركة أكبر من صفر لإجراء الحساب.');
+      return;
+    }
+    setValidationError('');
     setResult(
       calculateInheritance({
         deceasedGender,
@@ -152,14 +164,19 @@ export default function InheritanceCalculator() {
         </div>
 
         <div>
-          <div style={{ color: '#9BA3AF', fontSize: 11.5, fontWeight: 700, marginBottom: 8 }}>مبلغ التركة الصافي (جنيه مصري)</div>
+          <label htmlFor="estate-amount" style={{ display: 'block', color: '#9BA3AF', fontSize: 11.5, fontWeight: 700, marginBottom: 8 }}>مبلغ التركة الصافي (جنيه مصري)</label>
           <input
+            id="estate-amount"
             type="number"
-            min="0"
+            min="1"
             value={estateAmount}
-            onChange={(e) => setEstateAmount(e.target.value)}
+            onChange={(e) => {
+              setEstateAmount(e.target.value);
+              setValidationError('');
+            }}
             style={{ width: '100%', background: '#fff', border: '1.5px solid #1C2D4F', borderRadius: 10, padding: '11px 14px', fontFamily: "'Almarai',sans-serif", fontSize: 14, color: '#1C2D4F', boxSizing: 'border-box', outline: 'none', boxShadow: '0 0 0 3px rgba(28,45,79,0.08)' }}
           />
+          {validationError && <div style={{ color: '#C2413B', fontSize: 11.5, fontWeight: 700, marginTop: 7 }}>{validationError}</div>}
         </div>
 
         <div>

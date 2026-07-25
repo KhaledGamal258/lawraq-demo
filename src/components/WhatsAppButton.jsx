@@ -6,27 +6,29 @@ function WhatsAppIcon({ size = 14 }) {
   );
 }
 
-export default function WhatsAppButton({ onClick, compact = false, label = 'إرسال تذكير عبر واتساب' }) {
+export default function WhatsAppButton({ onClick, compact = false, label = 'إرسال تذكير عبر واتساب', disabled = false }) {
   return (
     <button
       type="button"
       onClick={onClick}
+      disabled={disabled}
       aria-label={label}
       title={label}
       style={{
         display: 'inline-flex',
         alignItems: 'center',
         gap: compact ? 0 : 6,
-        background: 'rgba(37,211,102,0.1)',
-        border: '1px solid rgba(37,211,102,0.3)',
+        background: disabled ? '#F1EFEA' : 'rgba(37,211,102,0.1)',
+        border: disabled ? '1px solid #E4E0D8' : '1px solid rgba(37,211,102,0.3)',
         borderRadius: 20,
         padding: compact ? '6px' : '6px 12px',
-        cursor: 'pointer',
+        cursor: disabled ? 'not-allowed' : 'pointer',
+        opacity: disabled ? 0.55 : 1,
         flexShrink: 0,
       }}
     >
       <WhatsAppIcon />
-      {!compact && <span style={{ color: '#1B8F4F', fontSize: 11.5, fontWeight: 700, fontFamily: "'Almarai',sans-serif", whiteSpace: 'nowrap' }}>{label}</span>}
+      {!compact && <span style={{ color: disabled ? '#8E95A0' : '#1B8F4F', fontSize: 11.5, fontWeight: 700, fontFamily: "'Almarai',sans-serif", whiteSpace: 'nowrap' }}>{label}</span>}
     </button>
   );
 }
