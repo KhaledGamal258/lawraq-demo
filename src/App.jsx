@@ -8,7 +8,7 @@ import CasePage from './screens/CasePage';
 import AddClient from './screens/AddClient';
 import TeamView from './screens/TeamView';
 import InheritanceCalculator from './screens/InheritanceCalculator';
-import { clients as clientsData, getClientById, upcomingHearings as upcomingHearingsDefault, getCaseStatusOption } from './data/clients';
+import { clients as clientsData, getClientById, upcomingHearings as upcomingHearingsDefault, getCaseStatusOption, getTeamMemberById } from './data/clients';
 import { clearDemoStore, createDefaultCaseContent, loadDemoStore, saveDemoStore } from './data/demoStore';
 import { buildHearingObj, toArNum } from './utils/arabicDate';
 import { generateId } from './utils/id';
@@ -28,6 +28,18 @@ function deriveDefaultCaseStatus(base) {
 }
 
 const LAWYER_NAME = 'أ. نادين سامي';
+
+function createAutomaticActivity({ title, desc, visible = false, dotColor = '#C9A870' }) {
+  return {
+    id: generateId('activity'),
+    title,
+    desc,
+    date: 'الآن · أضيف تلقائيًا',
+    dotColor,
+    visible,
+    source: 'system',
+  };
+}
 
 function isoDaysFromToday(days) {
   const date = new Date();
@@ -185,6 +197,19 @@ export default function App() {
 
   const handleStatusChange = (clientId, newStatus) => {
     setStatusOverrides((prev) => ({ ...prev, [clientId]: newStatus }));
+    updateCaseContent(clientId, (content) => ({
+      ...content,
+      updates: [
+        createAutomaticActivity({
+          title: 'تم تحديث حالة القضية',
+          desc: `غيّر النظام حالة القضية إلى «${newStatus}» وحدثها في ملف الموكّل.`,
+          visible: true,
+          dotColor: '#1C2D4F',
+        }),
+        ...content.updates,
+      ],
+    }));
+    showToast('تم تحديث الحالة وتسجيل النشاط تلقائيًا');
   };
 
   const getMergedSessions = (id) => {
@@ -203,10 +228,27 @@ export default function App() {
   };
 
   const handleToggleDocument = (clientId, documentId) => {
-    updateCaseContent(clientId, (content) => ({
-      ...content,
-      docs: content.docs.map((doc) => (doc.id === documentId ? { ...doc, visible: !doc.visible } : doc)),
-    }));
+    updateCaseContent(clientId, (content) => {
+      const targetDocument = content.docs.find((doc) => doc.id === documentId);
+      if (!targetDocument) return content;
+      const willBeVisible = !targetDocument.visible;
+      return {
+        ...content,
+        docs: content.docs.map((doc) => (doc.id === documentId ? { ...doc, visible: willBeVisible } : doc)),
+        updates: [
+          createAutomaticActivity({
+            title: willBeVisible ? 'تمت مشاركة مستند مع الموكّل' : 'تم إرجاع مستند للاستخدام الداخلي',
+            desc: willBeVisible
+              ? `أصبح «${targetDocument.name}» متاحًا تلقائيًا في بوابة الموكّل.`
+              : `أصبح «${targetDocument.name}» داخليًا ولم يعد ظاهرًا في بوابة الموكّل.`,
+            visible: willBeVisible,
+            dotColor: willBeVisible ? '#16A34A' : '#9CA3AF',
+          }),
+          ...content.updates,
+        ],
+      };
+    });
+    showToast('تم تنفيذ الإجراء وتسجيله تلقائيًا');
   };
 
   const handleToggleUpdate = (clientId, updateId) => {
@@ -278,20 +320,80 @@ export default function App() {
     if (session.nextHearing) {
       setHearingOverrides((prev) => ({ ...prev, [clientId]: session.nextHearing }));
     }
+    updateCaseContent(clientId, (content) => {
+      const automaticUpdates = [
+        createAutomaticActivity({
+          title: 'تم تسجيل نتيجة جلسة جديدة',
+          desc: session.decision,
+          visible: false,
+          dotColor: '#1C2D4F',
+        }),
+      ];
+      if (session.nextHearing) {
+        automaticUpdates.unshift(
+          createAutomaticActivity({
+            title: 'تم تحديث موعد الجلسة القادمة',
+            desc: `حدّث النظام الموعد القادم إلى ${session.nextHearing.full} وأظهره في بوابة الموكّل.`,
+            visible: true,
+            dotColor: '#C9A870',
+          })
+        );
+      }
+      return { ...content, updates: [...automaticUpdates, ...content.updates] };
+    });
+    showToast('تم حفظ الجلسة وتشغيل التحديثات التلقائية');
   };
 
   const handleReassign = (clientId, newAssigneeId) => {
     setAssignmentOverrides((prev) => ({ ...prev, [clientId]: newAssigneeId }));
+    const assignee = getTeamMemberById(newAssigneeId);
+    updateCaseContent(clientId, (content) => ({
+      ...content,
+      updates: [
+        createAutomaticActivity({
+          title: 'تم تغيير المحامي المسؤول',
+          desc: `أُسندت القضية إلى ${assignee?.name || 'عضو آخر في الفريق'}.`,
+          visible: false,
+          dotColor: '#5D6579',
+        }),
+        ...content.updates,
+      ],
+    }));
+    showToast('تم الإسناد وتسجيله تلقائيًا');
   };
 
   const handleArchive = (clientId) => {
     setArchiveOverrides((prev) => ({ ...prev, [clientId]: true }));
+    updateCaseContent(clientId, (content) => ({
+      ...content,
+      updates: [
+        createAutomaticActivity({
+          title: 'تم أرشفة القضية',
+          desc: 'نقل النظام القضية من القضايا النشطة إلى الأرشيف مع الاحتفاظ بسجلها.',
+          visible: false,
+          dotColor: '#9CA3AF',
+        }),
+        ...content.updates,
+      ],
+    }));
     showToast('تم نقل القضية إلى الأرشيف');
     setLawyerView('clients');
   };
 
   const handleRestore = (clientId) => {
     setArchiveOverrides((prev) => ({ ...prev, [clientId]: false }));
+    updateCaseContent(clientId, (content) => ({
+      ...content,
+      updates: [
+        createAutomaticActivity({
+          title: 'تمت استعادة القضية',
+          desc: 'أعاد النظام القضية إلى قائمة القضايا النشطة.',
+          visible: false,
+          dotColor: '#16A34A',
+        }),
+        ...content.updates,
+      ],
+    }));
     showToast('تمت استعادة القضية إلى النشطين');
   };
 

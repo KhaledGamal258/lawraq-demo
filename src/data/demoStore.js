@@ -5,9 +5,9 @@ const DEFAULT_DOCUMENTS = [
 ];
 
 const DEFAULT_UPDATES = [
-  { id: 'update-1', title: 'تم تقديم مذكرة الدفاع', desc: 'رُفعت مذكرة الدفاع رسميًا إلى محكمة استئناف القاهرة', date: '١٢ يونيو ٢٠٢٦', dotColor: '#1C2D4F', visible: true },
-  { id: 'update-2', title: 'تحديد موعد الجلسة القادمة', desc: 'تم تحديد الجلسة القادمة وإبلاغ فريق المكتب', date: '٥ يونيو ٢٠٢٦', dotColor: '#C9A870', visible: true },
-  { id: 'update-3', title: 'ملاحظات استراتيجية (سرية)', desc: 'نقاط ضعف في حجج الطرف الآخر — للاطلاع الداخلي فقط', date: '٢٠ مايو ٢٠٢٦', dotColor: '#B2B8C2', visible: false },
+  { id: 'update-1', title: 'تم تقديم مذكرة الدفاع', desc: 'رُفعت مذكرة الدفاع رسميًا إلى محكمة استئناف القاهرة', date: '١٢ يونيو ٢٠٢٦', dotColor: '#1C2D4F', visible: true, source: 'system' },
+  { id: 'update-2', title: 'تحديد موعد الجلسة القادمة', desc: 'تم تحديد الجلسة القادمة وإبلاغ فريق المكتب', date: '٥ يونيو ٢٠٢٦', dotColor: '#C9A870', visible: true, source: 'system' },
+  { id: 'update-3', title: 'ملاحظات استراتيجية (سرية)', desc: 'نقاط ضعف في حجج الطرف الآخر — للاطلاع الداخلي فقط', date: '٢٠ مايو ٢٠٢٦', dotColor: '#B2B8C2', visible: false, source: 'manual' },
 ];
 
 const DEFAULT_MESSAGES = [

@@ -65,10 +65,10 @@
     .section-lead { max-width: 680px; color: var(--muted); font-size: 16px; }
 
     /* Brand */
-    .brand { display: inline-flex; align-items: center; gap: 11px; direction: ltr; }
-    .brand-mark { width: 42px; height: 42px; flex: 0 0 auto; }
+    .brand { display: inline-flex; align-items: center; direction: ltr; }
     .brand-copy { line-height: 1; text-align: right; }
-    .brand-name { display: block; color: var(--navy); font-size: 19px; font-weight: 800; letter-spacing: 1.5px; }
+    .brand-name { display: block; color: var(--navy); font-size: 21px; font-weight: 800; letter-spacing: 2px; }
+    .brand-name .accent { color: var(--gold); }
     .brand-tag { display: block; color: #967946; font-size: 8.5px; font-weight: 800; margin-top: 5px; letter-spacing: 0; direction: rtl; }
     .brand.on-dark .brand-name { color: #fff; }
     .brand.on-dark .brand-tag { color: var(--gold-light); }
@@ -288,22 +288,27 @@
     .feature-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 18px; margin-top: 48px; }
     .feature {
       position: relative;
-      min-height: 220px;
+      min-height: 230px;
       border-radius: 20px;
       padding: 27px;
       border: 1px solid var(--line);
       overflow: hidden;
       background: #fff;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 22px;
     }
     .feature.large { grid-column: span 7; }
     .feature.medium { grid-column: span 5; }
     .feature.third { grid-column: span 4; }
     .feature.dark { background: var(--navy); border-color: var(--navy); color: #fff; }
-    .feature .number { color: var(--gold); font-size: 10px; font-weight: 800; margin-bottom: 35px; }
+    .feature-copy { position: relative; z-index: 1; min-width: 0; }
+    .feature .number { color: var(--gold); font-size: 10px; font-weight: 800; margin-bottom: 25px; }
     .feature h3 { font-size: 19px; margin-bottom: 9px; }
     .feature p { color: var(--muted); font-size: 13px; max-width: 420px; }
     .feature.dark p { color: rgba(255, 255, 255, .62); }
-    .feature-art { position: absolute; left: 22px; bottom: 18px; opacity: .95; }
+    .feature-art { position: static; opacity: .95; flex-shrink: 0; align-self: end; justify-self: center; }
     .feature-art.folder { width: 165px; }
     .feature-art.chat { width: 145px; }
     .feature-art.calendar { width: 118px; }
@@ -407,7 +412,6 @@
       .container { width: min(100% - 28px, 1160px); }
       .section { padding: 68px 0; }
       .site-header .brand-tag { display: none; }
-      .site-header .brand-mark { width: 36px; height: 36px; }
       .site-header .brand-name { font-size: 16px; }
       .nav { min-height: 66px; }
       .nav-actions .button { padding: 10px 13px; font-size: 11px; }
@@ -433,6 +437,7 @@
       .proof-item:nth-child(4) { border-top: 1px solid var(--line); }
       .feature.large, .feature.medium, .feature.third { grid-column: span 12; }
       .feature { min-height: 230px; }
+      .feature-art { max-width: 108px; }
       .archive-visual { min-height: 310px; }
       .cta { padding-bottom: 68px; }
       .cta-card { padding: 32px 22px; border-radius: 20px; }
@@ -447,26 +452,11 @@
 </head>
 <body>
 
-  <svg width="0" height="0" aria-hidden="true" style="position:absolute">
-    <symbol id="lawraq-mark" viewBox="0 0 48 48">
-      <rect x="2" y="2" width="44" height="44" rx="13" fill="#1c2d4f"/>
-      <path d="M10.5 37.5h25" stroke="#c8a86f" stroke-width="2.2" stroke-linecap="round"/>
-      <rect x="11" y="12" width="6.5" height="23.5" rx="1.8" fill="none" stroke="#c8a86f" stroke-width="2"/>
-      <rect x="19.5" y="15.5" width="6.5" height="20" rx="1.8" fill="none" stroke="#fff" stroke-width="2"/>
-      <path d="M28 18.5h6.5v17H28z" fill="none" stroke="#c8a86f" stroke-width="2" stroke-linejoin="round"/>
-      <path d="M13.2 17h2.2M21.7 20.5h2.2M30.2 23.5h2.2" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/>
-      <rect x="37" y="11" width="4" height="4" rx="1.2" fill="#c8a86f"/>
-      <rect x="38.5" y="18.5" width="3" height="3" rx="1" fill="#c8a86f" opacity=".72"/>
-      <rect x="37" y="25" width="2.5" height="2.5" rx=".8" fill="#c8a86f" opacity=".45"/>
-    </symbol>
-  </svg>
-
   <header class="site-header">
     <div class="container nav">
       <a class="brand" href="./" aria-label="LAWRAQ الرئيسية">
-        <svg class="brand-mark" viewBox="0 0 48 48" aria-hidden="true"><use href="#lawraq-mark"/></svg>
         <span class="brand-copy">
-          <span class="brand-name">LAWRAQ</span>
+          <span class="brand-name">LAW<span class="accent">RAQ</span></span>
           <span class="brand-tag">إدارة قانونية بلا ورق</span>
         </span>
       </a>
@@ -636,9 +626,11 @@
 
         <div class="feature-grid">
           <article class="feature large dark reveal">
-            <div class="number">01 — إدارة القضية</div>
-            <h3>الصورة الكاملة في صفحة واحدة</h3>
-            <p>بيانات القضية، الجلسات، المواعيد الحرجة، المستندات، الفريق، ورسائل الموكّل.</p>
+            <div class="feature-copy">
+              <div class="number">01 — إدارة القضية</div>
+              <h3>الصورة الكاملة في صفحة واحدة</h3>
+              <p>بيانات القضية، الجلسات، المواعيد الحرجة، المستندات، الفريق، ورسائل الموكّل.</p>
+            </div>
             <svg class="feature-art folder" viewBox="0 0 180 115" fill="none" aria-hidden="true">
               <path d="M15 25h62l12 13h74v64H15V25Z" fill="rgba(255,255,255,.08)" stroke="#c8a86f" stroke-width="2"/>
               <path d="M32 52h110M32 68h82M32 84h94" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".6"/>
@@ -648,9 +640,11 @@
           </article>
 
           <article class="feature medium reveal">
-            <div class="number">02 — المواعيد</div>
-            <h3>الجلسة لا تختبئ في الأجندة</h3>
-            <p>لوحة واحدة تجمع الجلسات القادمة ومواعيد الطعون والاستئناف.</p>
+            <div class="feature-copy">
+              <div class="number">02 — المواعيد</div>
+              <h3>الجلسة لا تختبئ في الأجندة</h3>
+              <p>لوحة واحدة تجمع الجلسات القادمة ومواعيد الطعون والاستئناف.</p>
+            </div>
             <svg class="feature-art calendar" viewBox="0 0 125 110" fill="none" aria-hidden="true">
               <rect x="8" y="18" width="101" height="82" rx="13" fill="#f3eee5" stroke="#c8a86f" stroke-width="2"/>
               <path d="M8 44h101M31 10v18M86 10v18" stroke="#1c2d4f" stroke-width="4" stroke-linecap="round"/>
@@ -661,9 +655,11 @@
           </article>
 
           <article class="feature third reveal">
-            <div class="number">03 — فريق المكتب</div>
-            <h3>نقاش داخلي منظم</h3>
-            <p>توزيع القضايا وملاحظات الفريق تظل داخل المكتب، بعيدًا عن بوابة الموكّل.</p>
+            <div class="feature-copy">
+              <div class="number">03 — فريق المكتب</div>
+              <h3>نقاش داخلي منظم</h3>
+              <p>توزيع القضايا وملاحظات الفريق تظل داخل المكتب، بعيدًا عن بوابة الموكّل.</p>
+            </div>
             <svg class="feature-art team" viewBox="0 0 135 105" fill="none" aria-hidden="true">
               <circle cx="40" cy="40" r="18" fill="#1c2d4f"/>
               <circle cx="94" cy="40" r="18" fill="#c8a86f"/>
@@ -672,9 +668,11 @@
           </article>
 
           <article class="feature third reveal">
-            <div class="number">04 — بوابة الموكّل</div>
-            <h3>شفافية بحدودك أنت</h3>
-            <p>أظهر التحديث أو المستند للموكّل، أو احتفظ به داخليًا بضغطة واحدة.</p>
+            <div class="feature-copy">
+              <div class="number">04 — بوابة الموكّل</div>
+              <h3>شفافية بحدودك أنت</h3>
+              <p>أظهر التحديث أو المستند للموكّل، أو احتفظ به داخليًا بضغطة واحدة.</p>
+            </div>
             <svg class="feature-art chat" viewBox="0 0 150 105" fill="none" aria-hidden="true">
               <path d="M12 18h99a12 12 0 0 1 12 12v33a12 12 0 0 1-12 12H53L29 93V75h-5a12 12 0 0 1-12-12V18Z" fill="#eef0ed" stroke="#1c2d4f" stroke-width="2"/>
               <path d="M31 39h70M31 54h49" stroke="#c8a86f" stroke-width="5" stroke-linecap="round"/>
@@ -682,9 +680,11 @@
           </article>
 
           <article class="feature third reveal">
-            <div class="number">05 — النماذج القانونية</div>
-            <h3>ابدأ من نموذج، لا من صفحة فارغة</h3>
-            <p>تصور لمكتبة صحف ومذكرات جاهزة للتخصيص والمراجعة داخل سياق القضية.</p>
+            <div class="feature-copy">
+              <div class="number">05 — النماذج القانونية</div>
+              <h3>ابدأ من نموذج، لا من صفحة فارغة</h3>
+              <p>تصور لمكتبة صحف ومذكرات جاهزة للتخصيص والمراجعة داخل سياق القضية.</p>
+            </div>
             <svg class="feature-art forms" viewBox="0 0 135 110" fill="none" aria-hidden="true">
               <path d="M28 12h70l17 17v70H28V12Z" fill="#f3eee5" stroke="#1c2d4f" stroke-width="2"/>
               <path d="M98 12v17h17M44 48h53M44 63h40M44 78h46" stroke="#c8a86f" stroke-width="4" stroke-linecap="round"/>
@@ -759,9 +759,8 @@
     <div class="container">
       <div class="footer-top">
         <a class="brand on-dark" href="./">
-          <svg class="brand-mark" viewBox="0 0 48 48" aria-hidden="true"><use href="#lawraq-mark"/></svg>
           <span class="brand-copy">
-            <span class="brand-name">LAWRAQ</span>
+            <span class="brand-name">LAW<span class="accent">RAQ</span></span>
             <span class="brand-tag">إدارة قانونية بلا ورق</span>
           </span>
         </a>

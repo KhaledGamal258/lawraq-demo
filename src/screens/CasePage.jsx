@@ -542,11 +542,25 @@ export default function CasePage({
                 <div style={{ display: 'flex', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
                   <div style={{ flex: '1 1 140px' }}>
                     <div style={{ color: '#9BA3AF', fontSize: 11, fontWeight: 700, marginBottom: 5 }}>تاريخ الجلسة</div>
-                    <input type="date" value={formDate} onChange={(e) => setFormDate(e.target.value)} style={inputStyle} />
+                    <input
+                      type="date"
+                      value={formDate}
+                      onChange={(e) => setFormDate(e.target.value)}
+                      onInput={(e) => setFormDate(e.currentTarget.value)}
+                      aria-label="تاريخ الجلسة"
+                      style={inputStyle}
+                    />
                   </div>
                   <div style={{ flex: '1 1 140px' }}>
                     <div style={{ color: '#9BA3AF', fontSize: 11, fontWeight: 700, marginBottom: 5 }}>الجلسة القادمة</div>
-                    <input type="date" value={formNextDate} onChange={(e) => setFormNextDate(e.target.value)} style={inputStyle} />
+                    <input
+                      type="date"
+                      value={formNextDate}
+                      onChange={(e) => setFormNextDate(e.target.value)}
+                      onInput={(e) => setFormNextDate(e.currentTarget.value)}
+                      aria-label="تاريخ الجلسة القادمة"
+                      style={inputStyle}
+                    />
                   </div>
                 </div>
                 <div style={{ marginBottom: 12 }}>
@@ -560,6 +574,14 @@ export default function CasePage({
                     placeholder="اكتب قرار المحكمة في هذه الجلسة..."
                     style={{ ...inputStyle, resize: 'none', lineHeight: 1.6 }}
                   />
+                </div>
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, background: 'rgba(201,168,112,0.12)', border: '1px solid rgba(201,168,112,0.26)', borderRadius: 9, padding: '9px 10px', marginBottom: 12 }}>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0, marginTop: 1 }}>
+                    <path d="m13 2-8 12h7l-1 8 8-12h-7l1-8Z" stroke="#B5924A" strokeWidth="1.7" strokeLinejoin="round" />
+                  </svg>
+                  <div style={{ color: '#7F683C', fontSize: 10.5, lineHeight: 1.6 }}>
+                    عند الحفظ، LAWRAQ يسجل النشاط ويحدّث موعد الجلسة القادمة في بوابة الموكّل تلقائيًا.
+                  </div>
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <button
@@ -578,7 +600,7 @@ export default function CasePage({
                       cursor: formDecision.trim() ? 'pointer' : 'not-allowed',
                     }}
                   >
-                    حفظ الجلسة
+                    حفظ وتشغيل التحديث
                   </button>
                   <button
                     type="button"
@@ -721,8 +743,22 @@ export default function CasePage({
 
           {/* ACTIVITY TIMELINE */}
           <div>
-            <div style={{ marginBottom: 13, padding: '0 2px' }}>
+            <div style={{ marginBottom: 13, padding: '0 2px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
               <span style={{ color: '#1C2D4F', fontSize: 16, fontWeight: 800 }}>سجل النشاط</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(22,163,74,0.08)', border: '1px solid rgba(22,163,74,0.2)', borderRadius: 20, padding: '4px 9px', color: '#15803D', fontSize: 9.5, fontWeight: 800 }}>
+                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#16A34A' }} />
+                الأتمتة نشطة
+              </span>
+            </div>
+
+            <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', background: '#EEF2F6', border: '1px solid #DCE3EB', borderRadius: 12, padding: '11px 12px', marginBottom: 10 }}>
+              <svg width="17" height="17" viewBox="0 0 24 24" fill="none" style={{ flexShrink: 0, marginTop: 1 }}>
+                <path d="m13 2-8 12h7l-1 8 8-12h-7l1-8Z" stroke="#1C2D4F" strokeWidth="1.7" strokeLinejoin="round" />
+              </svg>
+              <div>
+                <div style={{ color: '#1C2D4F', fontSize: 11.5, fontWeight: 800, marginBottom: 2 }}>السجل يتحدث من إجراءاتك تلقائيًا</div>
+                <div style={{ color: '#6B7484', fontSize: 10.5, lineHeight: 1.6 }}>تسجيل جلسة أو مشاركة مستند أو تغيير الحالة يضيف نشاطًا هنا. أنت تختار فقط هل يظل داخليًا أم يظهر للموكّل.</div>
+              </div>
             </div>
 
             <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 2px 16px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
@@ -734,7 +770,14 @@ export default function CasePage({
                   </div>
                   <div style={{ flex: 1, minWidth: 0, paddingBottom: 2 }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 8, marginBottom: 6 }}>
-                      <div style={{ color: '#1C2D4F', fontSize: 13.5, fontWeight: 700, lineHeight: 1.4, flex: 1 }}>{item.title}</div>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                          <span style={{ color: '#1C2D4F', fontSize: 13.5, fontWeight: 700, lineHeight: 1.4 }}>{item.title}</span>
+                          {item.source === 'system' && (
+                            <span style={{ background: 'rgba(28,45,79,0.07)', color: '#68758A', borderRadius: 6, padding: '2px 6px', fontSize: 8.5, fontWeight: 800 }}>تلقائي</span>
+                          )}
+                        </div>
+                      </div>
                       <div
                         role={archived ? undefined : 'button'}
                         tabIndex={archived ? undefined : 0}
