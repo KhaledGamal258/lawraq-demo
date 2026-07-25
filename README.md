@@ -22,4 +22,5 @@ npm run build
 npm run preview
 ```
 
-Open the landing page at `/` and the interactive tour at `/demo.html`.
+Open the landing page at `/` and the interactive tour at `/tour/`.
+The old `/demo.html` address is kept as a compatibility redirect.

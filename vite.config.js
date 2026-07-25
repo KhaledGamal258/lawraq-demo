@@ -13,7 +13,8 @@ export default defineConfig({
     rollupOptions: {
       input: {
         landing: resolve(projectRoot, 'index.html'),
-        demo: resolve(projectRoot, 'demo.html'),
+        legacyDemoRedirect: resolve(projectRoot, 'demo.html'),
+        tour: resolve(projectRoot, 'tour/index.html'),
       },
     },
   },

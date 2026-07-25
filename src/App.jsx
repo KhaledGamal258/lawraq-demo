@@ -112,7 +112,7 @@ function EntrySwitcher({ onSelect, onReset }) {
         </button>
         <div style={{ display: 'flex', justifyContent: 'center', gap: 14, marginTop: 4, flexWrap: 'wrap' }}>
           <a
-            href="./index.html"
+            href="../"
             style={{ color: '#1C2D4F', fontSize: 11.5, fontWeight: 700, textDecoration: 'none' }}
           >
             صفحة التعريف

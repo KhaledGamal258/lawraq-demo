@@ -2,15 +2,18 @@
 <html lang="ar" dir="rtl">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet" />
-    <meta name="description" content="جولة تفاعلية في LAWRAQ لإدارة المكتب القانوني وبوابة الموكّل." />
-    <title>LAWRAQ — الجولة التفاعلية</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <meta http-equiv="refresh" content="0; url=./tour/" />
+    <title>جارٍ نقلك إلى جولة LAWRAQ</title>
+    <script>
+      const target = new URL('./tour/', window.location.href);
+      target.search = window.location.search;
+      target.hash = window.location.hash;
+      window.location.replace(target.href);
+    </script>
   </head>
   <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
+    <a href="./tour/">متابعة إلى جولة LAWRAQ</a>
   </body>
 </html>

@@ -1,597 +1,829 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>LAWRAQ — مكتبك القانوني من غير فوضى</title>
-<meta name="description" content="LAWRAQ منصة عربية لتنظيم القضايا والجلسات وفريق المكتب والتواصل مع الموكّلين في مكان واحد.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
-<style>
-  :root{
-    --navy:#1C2D4F;
-    --navy-deep:#12203B;
-    --gold:#C9A870;
-    --gold-soft:#E4D3AE;
-    --sand:#D9D4CB;
-    --off:#F6F4F0;
-    --white:#FFFFFF;
-    --ink:#1C2D4F;
-    --muted:#5D6579;
-    --faint:#9BA3AF;
-    --line:#E8E4DC;
-    --radius:16px;
-    --radius-sm:10px;
-    --shadow:0 10px 40px rgba(28,45,79,0.10);
-    --shadow-lg:0 24px 70px rgba(18,32,59,0.28);
-  }
-  *{box-sizing:border-box;margin:0;padding:0;}
-  html{scroll-behavior:smooth;}
-  body{
-    font-family:'Almarai',sans-serif;
-    background:var(--off);
-    color:var(--ink);
-    line-height:1.7;
-    -webkit-font-smoothing:antialiased;
-  }
-  img,svg{display:block;max-width:100%;}
-  a{color:inherit;text-decoration:none;}
-  .wrap{max-width:1120px;margin:0 auto;padding:0 24px;}
-  section{padding:96px 0;}
-  @media (max-width:720px){ section{padding:64px 0;} }
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#172844">
+  <title>LAWRAQ — إدارة قانونية بلا ورق</title>
+  <meta name="description" content="LAWRAQ يجمع القضايا والجلسات والمستندات وتواصل الموكّلين في مساحة رقمية واحدة للمكتب القانوني.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --navy: #1c2d4f;
+      --navy-deep: #13223d;
+      --navy-soft: #273b60;
+      --gold: #c8a86f;
+      --gold-light: #eadcbc;
+      --paper: #f7f5f1;
+      --white: #fff;
+      --ink: #172844;
+      --muted: #646d7d;
+      --line: #e6e1d8;
+      --sage: #dce5df;
+      --shadow: 0 22px 65px rgba(19, 34, 61, .12);
+    }
 
-  /* ---------- eyebrow / badge ---------- */
-  .eyebrow{
-    display:inline-flex;align-items:center;gap:8px;
-    background:rgba(201,168,112,0.14);
-    color:var(--gold);
-    border:1px solid rgba(201,168,112,0.35);
-    font-size:13px;font-weight:700;
-    padding:7px 16px;border-radius:999px;
-    letter-spacing:.2px;
-  }
-  .eyebrow.on-light{ background:rgba(28,45,79,0.06); color:var(--navy); border-color:rgba(28,45,79,0.14); }
-  .eyebrow .dot{width:6px;height:6px;border-radius:50%;background:currentColor;}
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: "Almarai", sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+      line-height: 1.75;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    button, input, select { font: inherit; }
+    svg { display: block; max-width: 100%; }
+    .container { width: min(1160px, calc(100% - 40px)); margin-inline: auto; }
+    .section { padding: 96px 0; }
+    .section-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: #8e713e;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: .15px;
+      margin-bottom: 14px;
+    }
+    .section-kicker::before {
+      content: "";
+      width: 24px;
+      height: 1px;
+      background: var(--gold);
+    }
+    .section-title {
+      max-width: 720px;
+      font-size: clamp(28px, 4vw, 42px);
+      line-height: 1.35;
+      letter-spacing: -.7px;
+      margin-bottom: 16px;
+    }
+    .section-lead { max-width: 680px; color: var(--muted); font-size: 16px; }
 
-  /* ---------- header ---------- */
-  header{
-    position:sticky;top:0;z-index:50;
-    background:rgba(246,244,240,0.85);
-    backdrop-filter:blur(10px);
-    border-bottom:1px solid var(--line);
-  }
-  .nav{display:flex;align-items:center;justify-content:space-between;padding:16px 24px;max-width:1120px;margin:0 auto;}
-  .brand{display:flex;align-items:center;gap:10px;font-weight:800;font-size:19px;color:var(--navy);letter-spacing:1.2px;}
-  .brand .mark{width:34px;height:34px;}
-  .brand small{display:block;color:var(--gold);font-size:8px;letter-spacing:0;font-weight:800;margin-top:3px;}
-  .nav-cta{
-    background:var(--navy);color:var(--gold);
-    padding:11px 22px;border-radius:999px;
-    font-weight:700;font-size:14px;
-    box-shadow:0 6px 20px rgba(28,45,79,0.22);
-    transition:transform .2s ease;
-  }
-  .nav-cta:hover{transform:translateY(-1px);}
+    /* Brand */
+    .brand { display: inline-flex; align-items: center; gap: 11px; direction: ltr; }
+    .brand-mark { width: 42px; height: 42px; flex: 0 0 auto; }
+    .brand-copy { line-height: 1; text-align: right; }
+    .brand-name { display: block; color: var(--navy); font-size: 19px; font-weight: 800; letter-spacing: 1.5px; }
+    .brand-tag { display: block; color: #967946; font-size: 8.5px; font-weight: 800; margin-top: 5px; letter-spacing: 0; direction: rtl; }
+    .brand.on-dark .brand-name { color: #fff; }
+    .brand.on-dark .brand-tag { color: var(--gold-light); }
 
-  /* ---------- hero ---------- */
-  .hero{
-    position:relative;
-    background:radial-gradient(120% 140% at 15% 0%, #24365c 0%, var(--navy) 45%, var(--navy-deep) 100%);
-    color:#fff;
-    overflow:hidden;
-    padding:88px 0 0;
-  }
-  .hero::before{
-    content:"";position:absolute;inset:0;
-    background:
-      radial-gradient(600px 300px at 85% 10%, rgba(201,168,112,0.18), transparent 70%);
-    pointer-events:none;
-  }
-  .hero-grid{
-    display:grid;grid-template-columns:1.1fr .9fr;gap:56px;align-items:center;
-    position:relative;
-  }
-  @media (max-width:900px){ .hero-grid{grid-template-columns:1fr;} }
-  .hero h1{
-    font-size:44px;font-weight:800;line-height:1.32;
-    margin:22px 0 18px;
-    letter-spacing:-.3px;
-  }
-  .hero h1 span{color:var(--gold);}
-  @media (max-width:720px){ .hero h1{font-size:32px;} }
-  .hero p.lead{
-    font-size:18px;color:rgba(255,255,255,0.78);max-width:520px;margin-bottom:34px;
-  }
-  .hero-actions{display:flex;gap:14px;flex-wrap:wrap;}
-  .btn-primary{
-    background:var(--gold);color:var(--navy-deep);
-    padding:15px 30px;border-radius:999px;
-    font-weight:800;font-size:15.5px;
-    box-shadow:0 14px 34px rgba(201,168,112,0.35);
-    border:none;cursor:pointer;
-    transition:transform .2s ease, box-shadow .2s ease;
-  }
-  .btn-primary:hover{transform:translateY(-2px);box-shadow:0 18px 40px rgba(201,168,112,0.45);}
-  .btn-ghost{
-    background:transparent;color:#fff;
-    padding:15px 26px;border-radius:999px;
-    font-weight:700;font-size:15px;
-    border:1.5px solid rgba(255,255,255,0.28);
-  }
-  .hero-note{margin-top:18px;font-size:13.5px;color:rgba(255,255,255,0.5);}
+    /* Navigation */
+    .site-header {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      background: rgba(247, 245, 241, .9);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid rgba(28, 45, 79, .08);
+    }
+    .nav { min-height: 76px; display: flex; align-items: center; justify-content: space-between; gap: 24px; }
+    .nav-links { display: flex; align-items: center; gap: 26px; color: var(--muted); font-size: 13px; font-weight: 700; }
+    .nav-links a:hover { color: var(--navy); }
+    .nav-actions { display: flex; align-items: center; gap: 12px; }
+    .button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      border-radius: 12px;
+      padding: 13px 21px;
+      border: 1px solid transparent;
+      font-size: 13.5px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: transform .2s ease, box-shadow .2s ease, background .2s ease;
+    }
+    .button:hover { transform: translateY(-2px); }
+    .button.primary { background: var(--navy); color: #fff; box-shadow: 0 10px 28px rgba(28, 45, 79, .2); }
+    .button.gold { background: var(--gold); color: var(--navy-deep); box-shadow: 0 14px 32px rgba(200, 168, 111, .25); }
+    .button.ghost { border-color: rgba(255, 255, 255, .24); color: #fff; background: rgba(255, 255, 255, .05); }
+    .button .arrow { font-size: 17px; line-height: 1; }
 
-  /* signature scale mark */
-  .scale-wrap{position:relative;display:flex;justify-content:center;}
-  .scale-svg{width:280px;height:280px;filter:drop-shadow(0 20px 40px rgba(0,0,0,0.35));}
-  @keyframes settle{
-    0%{transform:rotate(-6deg);}
-    50%{transform:rotate(4deg);}
-    100%{transform:rotate(0deg);}
-  }
-  .scale-beam{transform-origin:140px 96px;animation:settle 2.4s cubic-bezier(.22,1,.36,1) both;}
-  @media (prefers-reduced-motion:reduce){ .scale-beam{animation:none;} }
+    /* Hero */
+    .hero {
+      position: relative;
+      overflow: hidden;
+      color: #fff;
+      background:
+        radial-gradient(circle at 12% 10%, rgba(200, 168, 111, .18), transparent 26%),
+        radial-gradient(circle at 84% 85%, rgba(85, 116, 156, .2), transparent 32%),
+        linear-gradient(145deg, #21375c 0%, var(--navy-deep) 76%);
+      padding: 86px 0 78px;
+    }
+    .hero::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      opacity: .15;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, .09) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, .09) 1px, transparent 1px);
+      background-size: 48px 48px;
+      mask-image: linear-gradient(to left, #000, transparent 75%);
+    }
+    .hero-grid { position: relative; display: grid; grid-template-columns: 1.02fr .98fr; gap: 68px; align-items: center; }
+    .hero-copy { position: relative; z-index: 2; }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      color: var(--gold-light);
+      border: 1px solid rgba(200, 168, 111, .28);
+      background: rgba(200, 168, 111, .09);
+      border-radius: 999px;
+      padding: 7px 14px;
+      font-size: 11.5px;
+      font-weight: 800;
+    }
+    .hero-badge .pixel { width: 7px; height: 7px; border-radius: 2px; background: var(--gold); }
+    .hero h1 {
+      font-size: clamp(38px, 5.3vw, 62px);
+      line-height: 1.22;
+      letter-spacing: -1.5px;
+      margin: 24px 0 22px;
+    }
+    .hero h1 span { color: var(--gold-light); }
+    .hero-lead { color: rgba(255, 255, 255, .72); font-size: 17px; max-width: 600px; }
+    .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 32px; }
+    .hero-fine { display: flex; align-items: center; gap: 9px; color: rgba(255, 255, 255, .46); font-size: 11.5px; margin-top: 18px; }
+    .hero-fine svg { width: 15px; color: var(--gold); }
 
-  /* floating portal card mockup */
-  .portal-mock{
-    background:rgba(255,255,255,0.06);
-    border:1px solid rgba(255,255,255,0.14);
-    border-radius:20px;padding:22px;
-    backdrop-filter:blur(6px);
-    max-width:340px;margin:34px auto 0;
-    box-shadow:var(--shadow-lg);
-  }
-  .portal-mock .row1{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;}
-  .portal-mock .status-pill{
-    background:rgba(201,168,112,0.18);color:var(--gold-soft);
-    font-size:11.5px;font-weight:700;padding:4px 12px;border-radius:999px;
-    border:1px solid rgba(201,168,112,0.3);
-  }
-  .portal-mock .case-title{font-weight:800;font-size:15.5px;color:#fff;margin-bottom:4px;}
-  .portal-mock .case-sub{font-size:12.5px;color:rgba(255,255,255,0.5);margin-bottom:16px;}
-  .portal-mock .track{display:flex;gap:6px;margin-bottom:8px;}
-  .portal-mock .seg{flex:1;height:5px;border-radius:4px;background:rgba(255,255,255,0.14);}
-  .portal-mock .seg.done{background:var(--gold);}
-  .portal-mock .next{font-size:12px;color:rgba(255,255,255,0.55);}
+    /* Transformation illustration */
+    .transformation {
+      position: relative;
+      min-height: 490px;
+      direction: ltr;
+    }
+    .workspace-card {
+      position: absolute;
+      inset: 20px 0 38px 44px;
+      border: 1px solid rgba(255, 255, 255, .14);
+      background: rgba(255, 255, 255, .075);
+      backdrop-filter: blur(12px);
+      border-radius: 25px;
+      padding: 18px;
+      box-shadow: 0 38px 90px rgba(0, 0, 0, .27);
+      overflow: hidden;
+    }
+    .window-bar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+    .window-dots { display: flex; gap: 6px; }
+    .window-dots i { width: 7px; height: 7px; border-radius: 50%; background: rgba(255, 255, 255, .25); }
+    .window-dots i:first-child { background: var(--gold); }
+    .window-title { color: rgba(255, 255, 255, .55); font-size: 9px; font-weight: 700; direction: rtl; }
+    .workspace-body { display: grid; grid-template-columns: 80px 1fr; gap: 14px; height: 358px; }
+    .mini-nav { border-radius: 14px; background: rgba(8, 20, 39, .32); padding: 14px 10px; }
+    .mini-brand { width: 31px; height: 31px; border: 1px solid rgba(200, 168, 111, .45); border-radius: 9px; margin-bottom: 22px; }
+    .mini-line { height: 6px; background: rgba(255, 255, 255, .13); border-radius: 10px; margin: 12px 0; }
+    .mini-line.active { background: var(--gold); width: 75%; }
+    .dashboard { background: #f5f2ec; border-radius: 15px; padding: 18px; direction: rtl; color: var(--navy); }
+    .dash-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+    .dash-head strong { font-size: 12px; }
+    .dash-head span { color: #9299a4; font-size: 8px; }
+    .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; margin-bottom: 12px; }
+    .metric { background: #fff; border: 1px solid #ebe6de; border-radius: 10px; padding: 11px; }
+    .metric b { display: block; font-size: 17px; line-height: 1.2; }
+    .metric small { color: #8b929d; font-size: 7px; }
+    .case-row {
+      display: grid;
+      grid-template-columns: 34px 1fr auto;
+      gap: 10px;
+      align-items: center;
+      background: #fff;
+      border: 1px solid #ebe6de;
+      border-radius: 11px;
+      padding: 10px;
+      margin-top: 8px;
+    }
+    .case-date { width: 34px; height: 34px; display: grid; place-items: center; border-radius: 9px; background: var(--navy); color: #fff; font-size: 10px; font-weight: 800; }
+    .case-copy b { display: block; font-size: 8.5px; }
+    .case-copy small { color: #959ba5; font-size: 6.5px; }
+    .case-status { color: #8a713f; background: #f1e7d5; border-radius: 999px; padding: 3px 6px; font-size: 6px; font-weight: 800; }
+    .paper-stack {
+      position: absolute;
+      right: -14px;
+      bottom: 12px;
+      width: 174px;
+      height: 145px;
+      filter: drop-shadow(0 18px 26px rgba(0, 0, 0, .28));
+    }
+    .flow-dots { position: absolute; right: 105px; bottom: 119px; width: 145px; height: 65px; }
+    .float-note {
+      position: absolute;
+      left: 8px;
+      top: 0;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      direction: rtl;
+      color: var(--navy);
+      background: #fff;
+      padding: 10px 13px;
+      border-radius: 12px;
+      box-shadow: var(--shadow);
+      font-size: 9px;
+      font-weight: 800;
+    }
+    .float-note .live { width: 8px; height: 8px; border-radius: 50%; background: #4f9b75; box-shadow: 0 0 0 5px rgba(79, 155, 117, .12); }
 
-  .hero-shots{position:relative;height:64px;margin-top:64px;}
-  .wave{position:absolute;bottom:-1px;left:0;width:100%;display:block;}
+    /* Proof strip */
+    .proof { position: relative; z-index: 3; margin-top: -28px; }
+    .proof-inner {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      box-shadow: var(--shadow);
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      overflow: hidden;
+    }
+    .proof-item { padding: 23px 22px; text-align: center; }
+    .proof-item + .proof-item { border-right: 1px solid var(--line); }
+    .proof-item b { display: block; font-size: 13px; margin-bottom: 4px; }
+    .proof-item span { color: var(--muted); font-size: 10.5px; }
 
-  /* ---------- problem ---------- */
-  .problem{background:var(--off);}
-  .section-head{max-width:640px;margin-bottom:52px;}
-  .section-head h2{font-size:30px;font-weight:800;margin:14px 0 12px;color:var(--navy);}
-  .section-head p{color:var(--muted);font-size:16px;}
+    /* From / to */
+    .shift { background: #fff; }
+    .shift-grid { display: grid; grid-template-columns: .82fr 1.18fr; gap: 70px; align-items: center; margin-top: 48px; }
+    .archive-visual {
+      position: relative;
+      min-height: 390px;
+      border-radius: 24px;
+      background: linear-gradient(145deg, #e9e4db, #f8f6f2);
+      border: 1px solid var(--line);
+      overflow: hidden;
+    }
+    .archive-visual::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(rgba(28, 45, 79, .14) 1px, transparent 1px);
+      background-size: 19px 19px;
+      mask-image: linear-gradient(135deg, transparent 40%, #000);
+    }
+    .archive-visual svg { position: absolute; inset: 36px; width: calc(100% - 72px); height: calc(100% - 72px); z-index: 1; }
+    .shift-list { display: grid; gap: 12px; }
+    .shift-row {
+      display: grid;
+      grid-template-columns: 42px 1fr;
+      gap: 14px;
+      align-items: start;
+      padding: 17px 18px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--paper);
+    }
+    .shift-icon { width: 42px; height: 42px; display: grid; place-items: center; border-radius: 12px; background: var(--navy); color: var(--gold); }
+    .shift-icon svg { width: 20px; height: 20px; }
+    .shift-row b { display: block; font-size: 14px; margin-bottom: 3px; }
+    .shift-row p { color: var(--muted); font-size: 12.5px; }
 
-  .problem-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;}
-  @media (max-width:820px){ .problem-grid{grid-template-columns:1fr;} }
-  .problem-card{
-    background:var(--white);border-radius:var(--radius);
-    padding:28px 24px;box-shadow:var(--shadow);
-    border-top:3px solid var(--gold);
-  }
-  .problem-card .num{font-size:13px;color:var(--gold);font-weight:800;margin-bottom:10px;letter-spacing:.5px;}
-  .problem-card h3{font-size:17px;font-weight:800;margin-bottom:8px;color:var(--navy);}
-  .problem-card p{color:var(--muted);font-size:14.5px;}
+    /* Bento features */
+    .features { background: var(--paper); }
+    .feature-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 18px; margin-top: 48px; }
+    .feature {
+      position: relative;
+      min-height: 220px;
+      border-radius: 20px;
+      padding: 27px;
+      border: 1px solid var(--line);
+      overflow: hidden;
+      background: #fff;
+    }
+    .feature.large { grid-column: span 7; }
+    .feature.medium { grid-column: span 5; }
+    .feature.third { grid-column: span 4; }
+    .feature.dark { background: var(--navy); border-color: var(--navy); color: #fff; }
+    .feature .number { color: var(--gold); font-size: 10px; font-weight: 800; margin-bottom: 35px; }
+    .feature h3 { font-size: 19px; margin-bottom: 9px; }
+    .feature p { color: var(--muted); font-size: 13px; max-width: 420px; }
+    .feature.dark p { color: rgba(255, 255, 255, .62); }
+    .feature-art { position: absolute; left: 22px; bottom: 18px; opacity: .95; }
+    .feature-art.folder { width: 165px; }
+    .feature-art.chat { width: 145px; }
+    .feature-art.calendar { width: 118px; }
+    .feature-art.team { width: 128px; }
+    .feature-art.forms { width: 128px; }
 
-  /* ---------- pillars ---------- */
-  .pillars{background:var(--white);}
-  .pillars-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;}
-  @media (max-width:820px){ .pillars-grid{grid-template-columns:1fr;} }
-  .pillar{
-    background:var(--off);border-radius:var(--radius);
-    padding:32px 26px;
-    border:1px solid var(--line);
-    transition:transform .25s ease, box-shadow .25s ease;
-  }
-  .pillar:hover{transform:translateY(-4px);box-shadow:var(--shadow);}
-  .pillar .icon{
-    width:46px;height:46px;border-radius:12px;
-    background:var(--navy);display:flex;align-items:center;justify-content:center;
-    margin-bottom:18px;
-  }
-  .pillar .icon svg{width:22px;height:22px;stroke:var(--gold);}
-  .pillar h3{font-size:18px;font-weight:800;margin-bottom:10px;color:var(--navy);}
-  .pillar p{color:var(--muted);font-size:14.5px;}
+    /* Client portal */
+    .portal { background: #fff; }
+    .portal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 64px; align-items: center; }
+    .portal-frame {
+      border-radius: 27px;
+      padding: 20px;
+      background: var(--navy-deep);
+      box-shadow: var(--shadow);
+    }
+    .portal-phone {
+      max-width: 310px;
+      margin: auto;
+      padding: 14px;
+      border-radius: 21px;
+      background: #f5f2ec;
+      color: var(--navy);
+    }
+    .phone-top { display: flex; justify-content: space-between; align-items: center; font-size: 8px; margin-bottom: 17px; }
+    .phone-logo { font-weight: 800; letter-spacing: 1px; }
+    .phone-case { background: #fff; border-radius: 15px; padding: 15px; border: 1px solid #e8e3da; }
+    .phone-case small { color: #9299a4; font-size: 7px; }
+    .phone-case h4 { font-size: 12px; margin: 4px 0 12px; }
+    .phone-progress { display: flex; gap: 4px; margin-bottom: 15px; }
+    .phone-progress i { flex: 1; height: 4px; border-radius: 4px; background: #e6e1d8; }
+    .phone-progress i.done { background: var(--gold); }
+    .phone-update { display: flex; gap: 9px; align-items: center; padding: 10px 0; border-top: 1px solid #eeeae3; }
+    .phone-update .tick { width: 24px; height: 24px; display: grid; place-items: center; border-radius: 8px; background: #e8f0eb; color: #3d7659; font-size: 10px; }
+    .phone-update b { display: block; font-size: 8px; }
+    .phone-update span { display: block; color: #9ba0a9; font-size: 6.5px; }
+    .portal-copy .quote {
+      border-right: 3px solid var(--gold);
+      padding-right: 17px;
+      color: var(--navy);
+      font-size: 20px;
+      font-weight: 800;
+      margin: 28px 0;
+    }
+    .portal-points { display: grid; gap: 13px; }
+    .portal-point { display: flex; gap: 10px; color: var(--muted); font-size: 13px; }
+    .portal-point i { width: 20px; height: 20px; flex: 0 0 auto; border-radius: 50%; display: grid; place-items: center; color: var(--navy); background: var(--gold-light); font-style: normal; font-size: 10px; font-weight: 800; }
 
-  /* ---------- steps ---------- */
-  .steps{background:var(--off);}
-  .steps-row{display:flex;gap:0;counter-reset:step;}
-  @media (max-width:820px){ .steps-row{flex-direction:column;} }
-  .step{
-    flex:1;position:relative;padding:0 26px 0 0;
-  }
-  .step:not(:last-child){border-left:1px dashed var(--sand);}
-  @media (max-width:820px){
-    .step{padding:0 0 26px 26px;border-left:none !important;border-right:1px dashed var(--sand);}
-    .step:last-child{border-right:none;}
-  }
-  .step .step-num{
-    width:38px;height:38px;border-radius:50%;
-    background:var(--navy);color:var(--gold);
-    display:flex;align-items:center;justify-content:center;
-    font-weight:800;font-size:15px;margin-bottom:16px;
-  }
-  .step h4{font-size:16px;font-weight:800;margin-bottom:8px;color:var(--navy);}
-  .step p{color:var(--muted);font-size:14px;}
+    /* CTA */
+    .cta { padding: 0 0 96px; }
+    .cta-card {
+      position: relative;
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: 1fr .8fr;
+      gap: 40px;
+      align-items: center;
+      color: #fff;
+      background: linear-gradient(135deg, var(--navy), var(--navy-deep));
+      border-radius: 25px;
+      padding: 48px 52px;
+    }
+    .cta-card::after {
+      content: "";
+      position: absolute;
+      width: 320px;
+      height: 320px;
+      left: -80px;
+      bottom: -190px;
+      border: 1px solid rgba(200, 168, 111, .28);
+      border-radius: 50%;
+      box-shadow: 0 0 0 48px rgba(200, 168, 111, .05), 0 0 0 96px rgba(200, 168, 111, .035);
+    }
+    .cta-copy, .interest-form { position: relative; z-index: 1; }
+    .cta h2 { font-size: clamp(26px, 4vw, 39px); line-height: 1.35; margin-bottom: 14px; }
+    .cta p { color: rgba(255, 255, 255, .66); font-size: 14px; }
+    .interest-form { display: grid; gap: 10px; background: rgba(255, 255, 255, .07); border: 1px solid rgba(255, 255, 255, .13); border-radius: 17px; padding: 18px; }
+    .interest-form input, .interest-form select { width: 100%; border: 0; outline: 0; padding: 12px 13px; border-radius: 10px; color: var(--navy); background: rgba(255, 255, 255, .95); font-size: 12px; }
+    .interest-form .button { width: 100%; border: 0; }
+    .form-note { text-align: center; color: rgba(255, 255, 255, .42); font-size: 9.5px; }
 
-  /* ---------- trust ---------- */
-  .trust{background:var(--white);}
-  .trust-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center;}
-  @media (max-width:820px){ .trust-grid{grid-template-columns:1fr;} }
-  .trust-list{display:flex;flex-direction:column;gap:20px;}
-  .trust-item{display:flex;gap:14px;align-items:flex-start;}
-  .trust-item .check{
-    width:26px;height:26px;border-radius:50%;background:rgba(201,168,112,0.16);
-    display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:2px;
-  }
-  .trust-item .check svg{width:13px;height:13px;stroke:var(--gold);}
-  .trust-item h5{font-size:15.5px;font-weight:800;color:var(--navy);margin-bottom:4px;}
-  .trust-item p{font-size:13.5px;color:var(--muted);}
-  .trust-visual{
-    background:var(--navy-deep);border-radius:20px;padding:36px;
-    color:#fff;position:relative;overflow:hidden;
-  }
-  .trust-visual::after{
-    content:"";position:absolute;inset:0;
-    background:radial-gradient(400px 200px at 100% 0%, rgba(201,168,112,0.16), transparent 70%);
-  }
-  .trust-visual h4{position:relative;font-size:19px;font-weight:800;margin-bottom:10px;}
-  .trust-visual p{position:relative;color:rgba(255,255,255,0.65);font-size:14px;margin-bottom:22px;}
-  .trust-badge{
-    position:relative;display:inline-flex;align-items:center;gap:8px;
-    background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.16);
-    padding:8px 14px;border-radius:999px;font-size:12.5px;font-weight:700;color:var(--gold-soft);
-  }
+    /* Footer */
+    footer { background: #101d34; color: rgba(255, 255, 255, .55); padding: 45px 0 28px; }
+    .footer-top { display: flex; justify-content: space-between; align-items: center; gap: 24px; }
+    .footer-links { display: flex; gap: 22px; flex-wrap: wrap; font-size: 12px; font-weight: 700; }
+    .footer-links a:hover { color: var(--gold-light); }
+    .footer-bottom { border-top: 1px solid rgba(255, 255, 255, .08); margin-top: 28px; padding-top: 22px; display: flex; justify-content: space-between; gap: 18px; font-size: 10.5px; }
 
-  /* ---------- waitlist ---------- */
-  .waitlist{
-    background:linear-gradient(160deg, var(--navy) 0%, var(--navy-deep) 100%);
-    color:#fff;
-  }
-  .waitlist-inner{
-    max-width:620px;margin:0 auto;text-align:center;
-  }
-  .waitlist h2{font-size:30px;font-weight:800;margin:16px 0 12px;}
-  .waitlist p.lead{color:rgba(255,255,255,0.72);font-size:16px;margin-bottom:36px;}
-  form.waitlist-form{
-    background:rgba(255,255,255,0.05);
-    border:1px solid rgba(255,255,255,0.14);
-    border-radius:var(--radius);
-    padding:28px;text-align:right;
-  }
-  .form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;}
-  @media (max-width:560px){ .form-row{grid-template-columns:1fr;} }
-  .field label{display:block;font-size:13px;font-weight:700;color:rgba(255,255,255,0.7);margin-bottom:7px;}
-  .field input, .field select{
-    width:100%;background:rgba(255,255,255,0.94);border:none;border-radius:10px;
-    padding:13px 14px;font-family:'Almarai',sans-serif;font-size:14px;color:var(--navy);
-    outline:none;
-  }
-  .field input::placeholder{color:var(--faint);}
-  .submit-btn{
-    width:100%;margin-top:6px;
-    background:var(--gold);color:var(--navy-deep);
-    padding:15px;border-radius:10px;border:none;
-    font-weight:800;font-size:15.5px;cursor:pointer;
-    transition:transform .2s ease;
-  }
-  .submit-btn:hover{transform:translateY(-1px);}
-  .form-fine{font-size:12px;color:rgba(255,255,255,0.45);margin-top:14px;text-align:center;}
-  .success-msg{
-    display:none;background:rgba(201,168,112,0.14);border:1px solid rgba(201,168,112,0.35);
-    border-radius:var(--radius-sm);padding:20px;text-align:center;color:var(--gold-soft);font-weight:700;
-  }
+    .reveal { opacity: 0; transform: translateY(18px); transition: opacity .65s ease, transform .65s ease; }
+    .reveal.visible { opacity: 1; transform: none; }
 
-  /* ---------- footer ---------- */
-  footer{background:var(--navy-deep);color:rgba(255,255,255,0.55);padding:44px 0 28px;}
-  .footer-inner{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px;}
-  .footer-brand{display:flex;align-items:center;gap:8px;color:#fff;font-weight:800;font-size:16px;}
-  .footer-links{display:flex;gap:22px;font-size:13.5px;flex-wrap:wrap;}
-  .footer-links a:hover{color:var(--gold);}
-  .footer-bottom{margin-top:26px;padding-top:22px;border-top:1px solid rgba(255,255,255,0.08);font-size:12.5px;text-align:center;color:rgba(255,255,255,0.35);}
-
-  /* reveal on scroll */
-  .reveal{opacity:0;transform:translateY(18px);transition:opacity .7s ease, transform .7s ease;}
-  .reveal.in{opacity:1;transform:translateY(0);}
-</style>
+    @media (max-width: 980px) {
+      .nav-links { display: none; }
+      .hero-grid, .shift-grid, .portal-grid, .cta-card { grid-template-columns: 1fr; }
+      .hero { padding-top: 64px; }
+      .transformation { max-width: 620px; width: 100%; margin: 0 auto; }
+      .shift-grid { gap: 42px; }
+      .feature.large, .feature.medium, .feature.third { grid-column: span 6; }
+      .cta-card { padding: 42px; }
+    }
+    @media (max-width: 680px) {
+      .container { width: min(100% - 28px, 1160px); }
+      .section { padding: 68px 0; }
+      .site-header .brand-tag { display: none; }
+      .site-header .brand-mark { width: 36px; height: 36px; }
+      .site-header .brand-name { font-size: 16px; }
+      .nav { min-height: 66px; }
+      .nav-actions .button { padding: 10px 13px; font-size: 11px; }
+      .hero { padding: 54px 0 58px; }
+      .hero h1 { letter-spacing: -.8px; }
+      .hero-actions { display: grid; }
+      .button { width: 100%; }
+      .transformation { min-height: 390px; margin-top: 20px; }
+      .workspace-card { inset: 20px 0 28px 0; padding: 12px; }
+      .workspace-body { grid-template-columns: 58px 1fr; height: 292px; gap: 9px; }
+      .dashboard { padding: 12px; }
+      .metrics { gap: 5px; }
+      .metric { padding: 8px 5px; }
+      .case-row { grid-template-columns: 29px 1fr; padding: 8px; }
+      .case-status { display: none; }
+      .mini-nav { padding: 10px 7px; }
+      .paper-stack { width: 126px; height: 110px; right: -7px; }
+      .flow-dots { right: 75px; bottom: 92px; width: 110px; }
+      .float-note { left: 5px; font-size: 8px; }
+      .proof { margin-top: -20px; }
+      .proof-inner { grid-template-columns: 1fr 1fr; }
+      .proof-item:nth-child(3) { border-top: 1px solid var(--line); }
+      .proof-item:nth-child(4) { border-top: 1px solid var(--line); }
+      .feature.large, .feature.medium, .feature.third { grid-column: span 12; }
+      .feature { min-height: 230px; }
+      .archive-visual { min-height: 310px; }
+      .cta { padding-bottom: 68px; }
+      .cta-card { padding: 32px 22px; border-radius: 20px; }
+      .footer-top, .footer-bottom { align-items: flex-start; flex-direction: column; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      html { scroll-behavior: auto; }
+      *, *::before, *::after { transition: none !important; animation: none !important; }
+      .reveal { opacity: 1; transform: none; }
+    }
+  </style>
 </head>
 <body>
 
-<header>
-  <div class="nav">
-    <div class="brand">
-      <svg class="mark" viewBox="0 0 48 48" fill="none" aria-hidden="true">
-        <rect x="2" y="2" width="44" height="44" rx="13" fill="#1C2D4F"/>
-        <path d="M15 11.5h12l7 7V36H15V11.5Z" stroke="#C9A870" stroke-width="2.2" stroke-linejoin="round"/>
-        <path d="M27 11.5v7h7" stroke="#C9A870" stroke-width="2.2" stroke-linejoin="round"/>
-        <path d="M20 25h9M20 30h6" stroke="#fff" stroke-width="2" stroke-linecap="round"/>
-        <circle cx="36.5" cy="11.5" r="2.5" fill="#C9A870"/>
-      </svg>
-      <span dir="ltr">LAWRAQ<small dir="rtl">لا ورق · لا فوضى</small></span>
-    </div>
-    <a href="./demo.html" class="nav-cta">جرّب الجولة</a>
-  </div>
-</header>
+  <svg width="0" height="0" aria-hidden="true" style="position:absolute">
+    <symbol id="lawraq-mark" viewBox="0 0 48 48">
+      <rect x="2" y="2" width="44" height="44" rx="13" fill="#1c2d4f"/>
+      <path d="M10.5 37.5h25" stroke="#c8a86f" stroke-width="2.2" stroke-linecap="round"/>
+      <rect x="11" y="12" width="6.5" height="23.5" rx="1.8" fill="none" stroke="#c8a86f" stroke-width="2"/>
+      <rect x="19.5" y="15.5" width="6.5" height="20" rx="1.8" fill="none" stroke="#fff" stroke-width="2"/>
+      <path d="M28 18.5h6.5v17H28z" fill="none" stroke="#c8a86f" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M13.2 17h2.2M21.7 20.5h2.2M30.2 23.5h2.2" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/>
+      <rect x="37" y="11" width="4" height="4" rx="1.2" fill="#c8a86f"/>
+      <rect x="38.5" y="18.5" width="3" height="3" rx="1" fill="#c8a86f" opacity=".72"/>
+      <rect x="37" y="25" width="2.5" height="2.5" rx=".8" fill="#c8a86f" opacity=".45"/>
+    </symbol>
+  </svg>
 
-<section class="hero">
-  <div class="wrap hero-grid">
-    <div>
-      <span class="eyebrow"><span class="dot"></span> نسخة عرض تفاعلية · بيانات تجريبية</span>
-      <h1>وقتك أثمن<br>من مكالمة <span>نص الليل</span></h1>
-      <p class="lead">LAWRAQ بيرتّب قضاياك وجلساتك وفريق مكتبك، ويدّي موكّلك مكان يتابع منه بنفسه — من غير مكالمات متابعة طول اليوم.</p>
-      <div class="hero-actions">
-        <a href="./demo.html" class="btn-primary">ابدأ الجولة التفاعلية</a>
-        <a href="#waitlist" class="btn-ghost">سجّل اهتمامك</a>
+  <header class="site-header">
+    <div class="container nav">
+      <a class="brand" href="./" aria-label="LAWRAQ الرئيسية">
+        <svg class="brand-mark" viewBox="0 0 48 48" aria-hidden="true"><use href="#lawraq-mark"/></svg>
+        <span class="brand-copy">
+          <span class="brand-name">LAWRAQ</span>
+          <span class="brand-tag">إدارة قانونية بلا ورق</span>
+        </span>
+      </a>
+      <nav class="nav-links" aria-label="روابط الصفحة">
+        <a href="#why">لماذا LAWRAQ؟</a>
+        <a href="#features">ما الذي تديره؟</a>
+        <a href="#client-portal">بوابة الموكّل</a>
+      </nav>
+      <div class="nav-actions">
+        <a href="./tour/" class="button primary">ابدأ الجولة <span class="arrow">←</span></a>
       </div>
-      <p class="hero-note">الديمو لا يجمع كلمات مرور ولا يحتوي على بيانات موكّلين حقيقية.</p>
     </div>
+  </header>
 
-    <div class="scale-wrap">
-      <div>
-        <svg class="scale-svg" viewBox="0 0 280 280" fill="none" aria-label="LAWRAQ digital document mark">
-          <rect x="57" y="38" width="166" height="204" rx="34" fill="rgba(255,255,255,0.035)" stroke="rgba(255,255,255,0.1)"/>
-          <path d="M96 69h70l38 38v108H96V69Z" fill="rgba(201,168,112,0.08)" stroke="#C9A870" stroke-width="4" stroke-linejoin="round"/>
-          <path d="M166 69v38h38" stroke="#C9A870" stroke-width="4" stroke-linejoin="round"/>
-          <path d="M121 137h57M121 163h43M121 189h30" stroke="#fff" stroke-opacity=".82" stroke-width="5" stroke-linecap="round"/>
-          <circle cx="212" cy="69" r="10" fill="#C9A870"/>
-          <rect x="224" y="91" width="13" height="13" rx="4" fill="#C9A870" opacity=".7"/>
-          <rect x="228" y="113" width="9" height="9" rx="3" fill="#C9A870" opacity=".4"/>
-        </svg>
-        <div class="portal-mock">
-          <div class="row1">
-            <span class="status-pill">قيد النظر</span>
-            <span style="font-size:11px;color:rgba(255,255,255,0.4);">بوابة الموكّل</span>
+  <main>
+    <section class="hero">
+      <div class="container hero-grid">
+        <div class="hero-copy">
+          <div class="hero-badge"><span class="pixel"></span> التحول الرقمي للمكاتب القانونية</div>
+          <h1>من الدوسيه المكدّس<br>إلى مكتب قانوني <span>يتحرّك معك.</span></h1>
+          <p class="hero-lead">LAWRAQ يجمع القضايا والجلسات والمستندات وتواصل الموكّلين في مساحة واحدة؛ واضحة للمحامي، ومطمئنة للموكّل.</p>
+          <div class="hero-actions">
+            <a href="./tour/" class="button gold">استكشف تجربة LAWRAQ <span class="arrow">←</span></a>
+            <a href="#why" class="button ghost">شاهد كيف تعمل</a>
           </div>
-          <div class="case-title">قضية تعويض عمالي</div>
-          <div class="case-sub">أحمد الشريف — استئناف القاهرة</div>
-          <div class="track">
-            <div class="seg done"></div><div class="seg done"></div><div class="seg"></div><div class="seg"></div>
+          <p class="hero-fine">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M12 3 5 6v5c0 4.5 2.8 8.3 7 10 4.2-1.7 7-5.5 7-10V6l-7-3Z" stroke="currentColor" stroke-width="1.7"/></svg>
+            نسخة عرض تفاعلية · جميع الأسماء والبيانات داخلها تجريبية
+          </p>
+        </div>
+
+        <div class="transformation" aria-label="تحول ملفات القضايا الورقية إلى مساحة عمل رقمية">
+          <div class="workspace-card">
+            <div class="window-bar">
+              <div class="window-dots"><i></i><i></i><i></i></div>
+              <span class="window-title">مساحة المكتب القانونية</span>
+            </div>
+            <div class="workspace-body">
+              <aside class="mini-nav">
+                <div class="mini-brand"></div>
+                <div class="mini-line active"></div>
+                <div class="mini-line"></div>
+                <div class="mini-line"></div>
+                <div class="mini-line"></div>
+              </aside>
+              <div class="dashboard">
+                <div class="dash-head"><strong>صباح الخير، أ. نادين</strong><span>لوحة المكتب</span></div>
+                <div class="metrics">
+                  <div class="metric"><b>١٢</b><small>موكّل نشط</small></div>
+                  <div class="metric"><b>٨</b><small>قضايا جارية</small></div>
+                  <div class="metric"><b>٣</b><small>جلسات قادمة</small></div>
+                </div>
+                <div class="case-row">
+                  <div class="case-date">٢٧</div>
+                  <div class="case-copy"><b>قضية تعويض عمالي</b><small>أحمد الشريف · استئناف القاهرة</small></div>
+                  <span class="case-status">قيد النظر</span>
+                </div>
+                <div class="case-row">
+                  <div class="case-date">٢٩</div>
+                  <div class="case-copy"><b>نزاع عقاري</b><small>منى إبراهيم · الأحوال الشخصية</small></div>
+                  <span class="case-status">جلسة قادمة</span>
+                </div>
+                <div class="case-row">
+                  <div class="case-date">٣١</div>
+                  <div class="case-copy"><b>إرث وتركة</b><small>سارة الديب · ابتدائية الجيزة</small></div>
+                  <span class="case-status">قيد النظر</span>
+                </div>
+              </div>
+            </div>
           </div>
-          <div class="next" id="demoNextHearing">الجلسة القادمة: قريبًا</div>
-        </div>
-      </div>
-    </div>
-  </div>
 
-  <div class="hero-shots">
-    <svg class="wave" viewBox="0 0 1440 64" preserveAspectRatio="none">
-      <path d="M0,32 C360,0 1080,64 1440,24 L1440,64 L0,64 Z" fill="#F6F4F0"/>
-    </svg>
-  </div>
-</section>
-
-<section class="problem">
-  <div class="wrap">
-    <div class="section-head reveal">
-      <span class="eyebrow on-light"><span class="dot"></span> المشكلة</span>
-      <h2>الشغل مش الوجع الحقيقي.<br>الفوضى حوالينه هي الوجع.</h2>
-      <p>عملاء بيرنوا في أي وقت، جلسات صعب تتابعها في الدماغ، ومستندات مبعترة بين الورق والموبايل.</p>
-    </div>
-    <div class="problem-grid">
-      <div class="problem-card reveal">
-        <div class="num">٠١</div>
-        <h3>تليفونك مش بيسكت</h3>
-        <p>أغلب المكالمات بتكون "قضيتي وصلت لفين؟" — سؤال ممكن يترد عليه من غير ما تتقاطع.</p>
-      </div>
-      <div class="problem-card reveal">
-        <div class="num">٠٢</div>
-        <h3>مواعيد في الدماغ أو على ورق</h3>
-        <p>خوف دايم من فوات جلسة أو ميعاد طعن — وده مش خوف زيادة، ده حق موكّلك ومسؤولية المكتب.</p>
-      </div>
-      <div class="problem-card reveal">
-        <div class="num">٠٣</div>
-        <h3>مستندات مبعترة</h3>
-        <p>مفيش مكان واحد تلاقي فيه كل حاجة تخص القضية وأنت بره المكتب أو قدام الموكّل.</p>
-      </div>
-    </div>
-  </div>
-</section>
-
-<section class="pillars" id="pillars">
-  <div class="wrap">
-    <div class="section-head reveal">
-      <span class="eyebrow on-light"><span class="dot"></span> الحل</span>
-      <h2>منصة واحدة، ثلاث فوايد حقيقية</h2>
-      <p>مبنية من الأول لطريقة شغل المحامي المصري — مش نسخة معرّبة من نظام أجنبي.</p>
-    </div>
-    <div class="pillars-grid">
-      <div class="pillar reveal">
-        <div class="icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18"/><path d="M8 4v-1M16 4v-1"/>
+          <svg class="paper-stack" viewBox="0 0 190 150" fill="none" aria-hidden="true">
+            <path d="M25 32h77l18 18v79H25V32Z" fill="#e8e0d1" stroke="#c8a86f" stroke-width="2"/>
+            <path d="M102 32v18h18" stroke="#c8a86f" stroke-width="2"/>
+            <path d="M39 64h62M39 79h48M39 94h55" stroke="#8b806f" stroke-width="3" stroke-linecap="round" opacity=".62"/>
+            <path d="M15 43h77l18 18v79H15V43Z" fill="#fffdf9" stroke="#ddd3c2" stroke-width="2"/>
+            <path d="M92 43v18h18" stroke="#ddd3c2" stroke-width="2"/>
+            <path d="M29 75h62M29 90h48M29 105h55" stroke="#1c2d4f" stroke-width="3" stroke-linecap="round" opacity=".48"/>
+            <rect x="46" y="22" width="61" height="18" rx="4" fill="#1c2d4f"/>
+            <path d="M56 31h31" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".75"/>
           </svg>
-        </div>
-        <h3>مكتبك في جيبك</h3>
-        <p>ملف القضية كامل معاك في أي مكان — المحكمة، عند الموكّل، وأنت مسافر. تشوف وتطبع من غير ما ترجع المكتب.</p>
-      </div>
-      <div class="pillar reveal">
-        <div class="icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="9" cy="7" r="4"/><path d="M2 21v-2a4 4 0 0 1 4-4h6a4 4 0 0 1 4 4v2"/><path d="M17 3.5a4 4 0 0 1 0 7.5"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+          <svg class="flow-dots" viewBox="0 0 150 70" fill="none" aria-hidden="true">
+            <path d="M8 53C42 53 49 18 88 18h47" stroke="#c8a86f" stroke-width="1.5" stroke-dasharray="3 6" opacity=".8"/>
+            <rect x="62" y="30" width="7" height="7" rx="2" fill="#c8a86f"/>
+            <rect x="79" y="17" width="5" height="5" rx="1.5" fill="#c8a86f" opacity=".72"/>
+            <rect x="95" y="15" width="3" height="3" rx="1" fill="#c8a86f" opacity=".45"/>
           </svg>
+          <div class="float-note"><span class="live"></span> كل قضية في مكانها</div>
         </div>
-        <h3>فريق المكتب متعاون</h3>
-        <p>وزّع القضايا على المحامين عندك، وتابع قرار كل جلسة، ونقاش داخلي بينكم — بعيد تمامًا عن الموكّل.</p>
       </div>
-      <div class="pillar reveal">
-        <div class="icon">
-          <svg viewBox="0 0 24 24" fill="none" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>
-          </svg>
-        </div>
-        <h3>بوابة خاصة لكل موكّل</h3>
-        <p>لينك خاص بكل موكّل — يشوف قضيته بس، ويسيبلك رسالة ترد عليها وانت فاضي. مفيش تسجيل، مفيش تطبيق.</p>
+    </section>
+
+    <div class="proof">
+      <div class="container proof-inner">
+        <div class="proof-item"><b>ملف قضية واحد</b><span>جلسات، مستندات، وتحديثات</span></div>
+        <div class="proof-item"><b>مواعيد واضحة</b><span>تنبيهات قبل ما الوقت يسبقك</span></div>
+        <div class="proof-item"><b>فريق متصل</b><span>نقاش داخلي بعيد عن الموكّل</span></div>
+        <div class="proof-item"><b>موكّل مطمئن</b><span>يتابع من بوابته بدل المكالمات</span></div>
       </div>
     </div>
-  </div>
-</section>
 
-<section class="steps">
-  <div class="wrap">
-    <div class="section-head reveal">
-      <span class="eyebrow on-light"><span class="dot"></span> إزاي تبدأ</span>
-      <h2>ثلاث خطوات بسيطة</h2>
-    </div>
-    <div class="steps-row">
-      <div class="step reveal">
-        <div class="step-num">١</div>
-        <h4>سجّل بياناتك</h4>
-        <p>اسمك ورقم تليفونك — دقيقة واحدة، من غير أي التزام.</p>
-      </div>
-      <div class="step reveal">
-        <div class="step-num">٢</div>
-        <h4>هنكلّمك</h4>
-        <p>نعرّفك أكتر على المنصة ونسمع احتياجات مكتبك بالتحديد.</p>
-      </div>
-      <div class="step reveal">
-        <div class="step-num">٣</div>
-        <h4>تبدأ تجربتك</h4>
-        <p>تبدأ بجولة مخصصة على LAWRAQ ونبني الـpilot مع احتياجات مكتبك.</p>
-      </div>
-    </div>
-  </div>
-</section>
+    <section class="section shift" id="why">
+      <div class="container">
+        <div class="section-kicker reveal">ليست مجرد أرشفة</div>
+        <h2 class="section-title reveal">نفس خبرتك القانونية.<br>طريقة أهدأ وأوضح لإدارتها.</h2>
+        <p class="section-lead reveal">LAWRAQ لا يغيّر شغلك كمحامٍ؛ هو يرتّب التفاصيل المحيطة به حتى تركز في القرار القانوني، لا في البحث عن الورقة.</p>
 
-<section class="trust">
-  <div class="wrap trust-grid">
-    <div class="reveal">
-      <span class="eyebrow on-light"><span class="dot"></span> تصميم الأمان المستهدف</span>
-      <h2 style="font-size:28px;font-weight:800;margin:16px 0 24px;color:var(--navy);">بياناتك، بياناتك بس</h2>
-      <div class="trust-list">
-        <div class="trust-item">
-          <div class="check"><svg viewBox="0 0 24 24" fill="none" stroke="#C9A870" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>
-          <div><h5>عزل كامل بين المكاتب</h5><p>كل مكتب له نطاق بيانات وصلاحيات مستقل يُفرض من الخادم في النسخة الفعلية.</p></div>
-        </div>
-        <div class="trust-item">
-          <div class="check"><svg viewBox="0 0 24 24" fill="none" stroke="#C9A870" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>
-          <div><h5>الموكّل يشوف اللي تسمحله بيه بس</h5><p>كل مستند وكل تحديث عليه تحكم منك — داخلي أو ظاهر للموكّل، أنت اللي بتقرر.</p></div>
-        </div>
-        <div class="trust-item">
-          <div class="check"><svg viewBox="0 0 24 24" fill="none" stroke="#C9A870" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></div>
-          <div><h5>نسخ احتياطي وتشفير</h5><p>جزء أساسي من خطة النسخة الفعلية، مع اختبار الاسترجاع وسجل تدقيق للعمليات الحساسة.</p></div>
-        </div>
-      </div>
-    </div>
-    <div class="trust-visual reveal">
-      <h4>مصمم لمحامي اليوم</h4>
-      <p>مش نسخة معرّبة من نظام أجنبي، ومش برنامج بيتحمّل على جهاز واحد. LAWRAQ بيتصمم من الصفر لطريقة شغل المكتب المصري — بالعربي، وبالجنيه.</p>
-      <span class="trust-badge">🇪🇬 مصمم ومبني في مصر</span>
-    </div>
-  </div>
-</section>
+        <div class="shift-grid">
+          <div class="archive-visual reveal">
+            <svg viewBox="0 0 430 330" fill="none" aria-hidden="true">
+              <rect x="35" y="42" width="145" height="246" rx="12" fill="#1c2d4f"/>
+              <path d="M49 101h117M49 169h117M49 237h117" stroke="#c8a86f" stroke-width="4"/>
+              <rect x="58" y="60" width="25" height="38" rx="3" fill="#f7f5f1"/>
+              <rect x="87" y="68" width="22" height="30" rx="3" fill="#c8a86f"/>
+              <rect x="113" y="57" width="31" height="41" rx="3" fill="#e9dfcf"/>
+              <rect x="58" y="119" width="31" height="47" rx="3" fill="#c8a86f"/>
+              <rect x="93" y="128" width="22" height="38" rx="3" fill="#f7f5f1"/>
+              <rect x="119" y="113" width="25" height="53" rx="3" fill="#dce5df"/>
+              <rect x="58" y="193" width="22" height="41" rx="3" fill="#f7f5f1"/>
+              <rect x="84" y="184" width="31" height="50" rx="3" fill="#d8c9ad"/>
+              <rect x="119" y="201" width="25" height="33" rx="3" fill="#f7f5f1"/>
+              <path d="M193 165h59" stroke="#c8a86f" stroke-width="2" stroke-dasharray="4 7"/>
+              <rect x="205" y="148" width="8" height="8" rx="2" fill="#c8a86f"/>
+              <rect x="224" y="160" width="6" height="6" rx="2" fill="#c8a86f" opacity=".7"/>
+              <rect x="242" y="154" width="4" height="4" rx="1" fill="#c8a86f" opacity=".45"/>
+              <rect x="260" y="73" width="136" height="190" rx="16" fill="#fff" stroke="#dcd6cc" stroke-width="2"/>
+              <rect x="276" y="91" width="103" height="42" rx="9" fill="#1c2d4f"/>
+              <path d="M289 107h51M289 117h35" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".75"/>
+              <rect x="276" y="144" width="103" height="28" rx="8" fill="#f0ece5"/>
+              <rect x="276" y="181" width="103" height="28" rx="8" fill="#f0ece5"/>
+              <rect x="276" y="218" width="103" height="28" rx="8" fill="#f0ece5"/>
+              <circle cx="291" cy="158" r="6" fill="#c8a86f"/>
+              <circle cx="291" cy="195" r="6" fill="#789183"/>
+              <circle cx="291" cy="232" r="6" fill="#c8a86f"/>
+            </svg>
+          </div>
 
-<section class="waitlist" id="waitlist">
-  <div class="wrap waitlist-inner">
-    <span class="eyebrow"><span class="dot"></span> كن من الأوائل</span>
-    <h2>سجّل اهتمامك دلوقتي</h2>
-    <p class="lead">سيب بياناتك عشان نرتب جولة تناسب طريقة شغل مكتبك.</p>
-
-    <form class="waitlist-form" id="waitlistForm" action="https://formspree.io/f/YOUR_FORM_ID" method="POST">
-      <div class="form-row">
-        <div class="field">
-          <label for="name">الاسم</label>
-          <input type="text" id="name" name="name" placeholder="اسمك الكامل" required>
-        </div>
-        <div class="field">
-          <label for="phone">رقم التليفون</label>
-          <input type="tel" id="phone" name="phone" placeholder="01xxxxxxxxx" required dir="ltr" style="text-align:right;">
+          <div class="shift-list">
+            <div class="shift-row reveal">
+              <div class="shift-icon">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M5 4h11l3 3v13H5V4Z" stroke="currentColor" stroke-width="1.7"/><path d="M16 4v4h3M8 12h8M8 16h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+              </div>
+              <div><b>الدوسيه يصبح ملف قضية حي</b><p>الجلسات والمستندات والرسائل مرتبطة بالقضية نفسها، لا موزعة بين أماكن مختلفة.</p></div>
+            </div>
+            <div class="shift-row reveal">
+              <div class="shift-icon">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M7 3v3M17 3v3M4 9h16M5 5h14a1 1 0 0 1 1 1v14H4V6a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.7"/><path d="m9 15 2 2 4-5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </div>
+              <div><b>الموعد يصبح تنبيهًا قابلًا للتصرف</b><p>الجلسة والميعاد الحرج يظهران أمامك في الوقت المناسب بدل الاعتماد على الذاكرة.</p></div>
+            </div>
+            <div class="shift-row reveal">
+              <div class="shift-icon">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M7 17H4v3l4-3h8a4 4 0 0 0 4-4V8a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v5a4 4 0 0 0 3 3.87" stroke="currentColor" stroke-width="1.7"/><path d="M8 9h8M8 13h5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+              </div>
+              <div><b>المكالمة المتكررة تصبح تحديثًا واضحًا</b><p>الموكّل يرى ما سمحت له برؤيته ويرسل رسالته من بوابته الخاصة.</p></div>
+            </div>
+          </div>
         </div>
       </div>
-      <div class="form-row" style="grid-template-columns:1fr;">
-        <div class="field">
-          <label for="office">نوع الشغل</label>
-          <select id="office" name="office_type">
-            <option value="محامي فردي">محامي فردي</option>
-            <option value="مكتب صغير (2-5)">مكتب صغير (٢-٥ محامين)</option>
-            <option value="مكتب متوسط (6-15)">مكتب متوسط (٦-١٥ محامي)</option>
-            <option value="مكتب كبير">مكتب أكبر من كده</option>
-          </select>
+    </section>
+
+    <section class="section features" id="features">
+      <div class="container">
+        <div class="section-kicker reveal">مساحة عمل واحدة</div>
+        <h2 class="section-title reveal">مصممة حول القضية،<br>لا حول الملفات المتناثرة.</h2>
+        <p class="section-lead reveal">كل واجهة لها وظيفة واضحة، وكل معلومة تظهر للشخص الصحيح بالقدر الصحيح.</p>
+
+        <div class="feature-grid">
+          <article class="feature large dark reveal">
+            <div class="number">01 — إدارة القضية</div>
+            <h3>الصورة الكاملة في صفحة واحدة</h3>
+            <p>بيانات القضية، الجلسات، المواعيد الحرجة، المستندات، الفريق، ورسائل الموكّل.</p>
+            <svg class="feature-art folder" viewBox="0 0 180 115" fill="none" aria-hidden="true">
+              <path d="M15 25h62l12 13h74v64H15V25Z" fill="rgba(255,255,255,.08)" stroke="#c8a86f" stroke-width="2"/>
+              <path d="M32 52h110M32 68h82M32 84h94" stroke="#fff" stroke-width="4" stroke-linecap="round" opacity=".6"/>
+              <rect x="134" y="14" width="31" height="20" rx="5" fill="#c8a86f"/>
+              <path d="m143 24 4 4 8-9" stroke="#1c2d4f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </article>
+
+          <article class="feature medium reveal">
+            <div class="number">02 — المواعيد</div>
+            <h3>الجلسة لا تختبئ في الأجندة</h3>
+            <p>لوحة واحدة تجمع الجلسات القادمة ومواعيد الطعون والاستئناف.</p>
+            <svg class="feature-art calendar" viewBox="0 0 125 110" fill="none" aria-hidden="true">
+              <rect x="8" y="18" width="101" height="82" rx="13" fill="#f3eee5" stroke="#c8a86f" stroke-width="2"/>
+              <path d="M8 44h101M31 10v18M86 10v18" stroke="#1c2d4f" stroke-width="4" stroke-linecap="round"/>
+              <rect x="27" y="57" width="18" height="16" rx="4" fill="#1c2d4f"/>
+              <rect x="52" y="57" width="18" height="16" rx="4" fill="#d8c9ad"/>
+              <rect x="77" y="57" width="18" height="16" rx="4" fill="#dce5df"/>
+            </svg>
+          </article>
+
+          <article class="feature third reveal">
+            <div class="number">03 — فريق المكتب</div>
+            <h3>نقاش داخلي منظم</h3>
+            <p>توزيع القضايا وملاحظات الفريق تظل داخل المكتب، بعيدًا عن بوابة الموكّل.</p>
+            <svg class="feature-art team" viewBox="0 0 135 105" fill="none" aria-hidden="true">
+              <circle cx="40" cy="40" r="18" fill="#1c2d4f"/>
+              <circle cx="94" cy="40" r="18" fill="#c8a86f"/>
+              <path d="M13 95c2-21 13-31 27-31s25 10 27 31M67 95c2-21 13-31 27-31s25 10 27 31" stroke="#1c2d4f" stroke-width="6" stroke-linecap="round" opacity=".85"/>
+            </svg>
+          </article>
+
+          <article class="feature third reveal">
+            <div class="number">04 — بوابة الموكّل</div>
+            <h3>شفافية بحدودك أنت</h3>
+            <p>أظهر التحديث أو المستند للموكّل، أو احتفظ به داخليًا بضغطة واحدة.</p>
+            <svg class="feature-art chat" viewBox="0 0 150 105" fill="none" aria-hidden="true">
+              <path d="M12 18h99a12 12 0 0 1 12 12v33a12 12 0 0 1-12 12H53L29 93V75h-5a12 12 0 0 1-12-12V18Z" fill="#eef0ed" stroke="#1c2d4f" stroke-width="2"/>
+              <path d="M31 39h70M31 54h49" stroke="#c8a86f" stroke-width="5" stroke-linecap="round"/>
+            </svg>
+          </article>
+
+          <article class="feature third reveal">
+            <div class="number">05 — النماذج القانونية</div>
+            <h3>ابدأ من نموذج، لا من صفحة فارغة</h3>
+            <p>تصور لمكتبة صحف ومذكرات جاهزة للتخصيص والمراجعة داخل سياق القضية.</p>
+            <svg class="feature-art forms" viewBox="0 0 135 110" fill="none" aria-hidden="true">
+              <path d="M28 12h70l17 17v70H28V12Z" fill="#f3eee5" stroke="#1c2d4f" stroke-width="2"/>
+              <path d="M98 12v17h17M44 48h53M44 63h40M44 78h46" stroke="#c8a86f" stroke-width="4" stroke-linecap="round"/>
+              <path d="M17 25v75h67" stroke="#1c2d4f" stroke-width="2" opacity=".35"/>
+            </svg>
+          </article>
         </div>
       </div>
-      <button type="submit" class="submit-btn">سجّل اهتمامي</button>
-      <p class="form-fine">مش هيتم التواصل معاك إلا بخصوص LAWRAQ — من غير أي رسائل زيادة.</p>
-    </form>
+    </section>
 
-    <div class="success-msg" id="successMsg">
-      تم التسجيل بنجاح ✓ — هنكلّمك قريب جدًا.
-    </div>
-  </div>
-</section>
-
-<footer>
-  <div class="wrap">
-    <div class="footer-inner">
-      <div class="footer-brand">
-        <svg width="28" height="28" viewBox="0 0 48 48" fill="none" aria-hidden="true">
-          <rect x="2" y="2" width="44" height="44" rx="13" fill="#fff" fill-opacity=".06"/>
-          <path d="M15 11.5h12l7 7V36H15V11.5Z" stroke="#C9A870" stroke-width="2.2" stroke-linejoin="round"/>
-          <path d="M27 11.5v7h7M20 25h9M20 30h6" stroke="#C9A870" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        <span dir="ltr">LAWRAQ</span>
+    <section class="section portal" id="client-portal">
+      <div class="container portal-grid">
+        <div class="portal-frame reveal">
+          <div class="portal-phone">
+            <div class="phone-top"><span class="phone-logo">LAWRAQ</span><span>بوابة الموكّل</span></div>
+            <div class="phone-case">
+              <small>ملف قضيتي</small>
+              <h4>قضية تعويض عمالي</h4>
+              <div class="phone-progress"><i class="done"></i><i class="done"></i><i></i><i></i></div>
+              <div class="phone-update">
+                <span class="tick">✓</span>
+                <div><b>تم تقديم مذكرة الدفاع</b><span>آخر تحديث من المكتب</span></div>
+              </div>
+              <div class="phone-update">
+                <span class="tick">↗</span>
+                <div><b>محضر الجلسة السابقة</b><span>مستند متاح للعرض</span></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="portal-copy">
+          <div class="section-kicker reveal">الجزء الذي يراه موكّلك</div>
+          <h2 class="section-title reveal">بوابة تهدّي القلق،<br>من غير ما تفتح كل أوراقك.</h2>
+          <p class="section-lead reveal">الموكّل لا يحتاج لوحة معقدة. يحتاج أن يعرف أين وصلت قضيته، وما الذي يحتاجه المكتب منه.</p>
+          <div class="quote reveal">«بدل ما يرن يسأل وصلتوا لفين، يفتح ويشوف بنفسه.»</div>
+          <div class="portal-points">
+            <div class="portal-point reveal"><i>✓</i><span>كل موكّل يرى قضيته وحدها.</span></div>
+            <div class="portal-point reveal"><i>✓</i><span>المحامي يحدد ما يظهر وما يظل داخليًا.</span></div>
+            <div class="portal-point reveal"><i>✓</i><span>الرسائل مرتبطة بملف القضية بدل أن تضيع بين المحادثات.</span></div>
+          </div>
+        </div>
       </div>
-      <div class="footer-links">
-        <a href="#pillars">المميزات</a>
-        <a href="#waitlist">سجّل اهتمامك</a>
-        <a href="https://wa.me/2001119155337" target="_blank" rel="noopener">تواصل عبر واتساب</a>
+    </section>
+
+    <section class="cta" id="interest">
+      <div class="container">
+        <div class="cta-card">
+          <div class="cta-copy">
+            <div class="section-kicker">نسخة تجريبية قابلة للتطوير</div>
+            <h2>شاهد مكتبك كما يمكن أن يكون.</h2>
+            <p>جرّب الجولة بنفسك، أو اترك بياناتك لنناقش كيف تناسب LAWRAQ طريقة شغل مكتبك.</p>
+            <a href="./tour/" class="button gold" style="margin-top:24px">افتح الجولة التفاعلية <span class="arrow">←</span></a>
+          </div>
+          <form class="interest-form" id="interestForm" action="https://formspree.io/f/YOUR_FORM_ID" method="POST">
+            <input name="name" required placeholder="الاسم">
+            <input name="phone" required inputmode="tel" placeholder="رقم الموبايل">
+            <select name="office-size" required>
+              <option value="" disabled selected>حجم المكتب</option>
+              <option>محامٍ مستقل</option>
+              <option>من ٢ إلى ٥ محامين</option>
+              <option>أكثر من ٥ محامين</option>
+            </select>
+            <button type="submit" class="button gold">أرغب في تجربة LAWRAQ</button>
+            <div class="form-note">لن نستخدم بياناتك إلا لترتيب العرض والتواصل معك.</div>
+          </form>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container">
+      <div class="footer-top">
+        <a class="brand on-dark" href="./">
+          <svg class="brand-mark" viewBox="0 0 48 48" aria-hidden="true"><use href="#lawraq-mark"/></svg>
+          <span class="brand-copy">
+            <span class="brand-name">LAWRAQ</span>
+            <span class="brand-tag">إدارة قانونية بلا ورق</span>
+          </span>
+        </a>
+        <div class="footer-links">
+          <a href="#why">الفكرة</a>
+          <a href="#features">المميزات</a>
+          <a href="./tour/">الجولة التفاعلية</a>
+          <a href="https://wa.me/2001119155337" target="_blank" rel="noopener">واتساب</a>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <span>© ٢٠٢٦ LAWRAQ</span>
+        <span>نموذج أولي للعرض · لا يحتوي على بيانات قانونية حقيقية</span>
       </div>
     </div>
-    <div class="footer-bottom">© 2026 LAWRAQ — نموذج تجريبي لمنصة إدارة المكتب القانوني.</div>
-  </div>
-</footer>
+  </footer>
 
-<script>
-  // scroll reveal
-  const els = document.querySelectorAll('.reveal');
-  const io = new IntersectionObserver((entries)=>{
-    entries.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } });
-  }, {threshold:0.15});
-  els.forEach(el=>io.observe(el));
-
-  // Keep the hero demo date fresh whenever the landing page is opened.
-  const demoDate = new Date();
-  demoDate.setDate(demoDate.getDate() + 4);
-  const arDigits = (value) => String(value).replace(/\d/g, (digit) => '٠١٢٣٤٥٦٧٨٩'[digit]);
-  const arMonths = ['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-  document.getElementById('demoNextHearing').textContent =
-    `الجلسة القادمة: ${arDigits(demoDate.getDate())} ${arMonths[demoDate.getMonth()]}`;
-
-  // form submit (Formspree — see setup note in comments below)
-  const form = document.getElementById('waitlistForm');
-  const success = document.getElementById('successMsg');
-  form.addEventListener('submit', async (e)=>{
-    e.preventDefault();
-    const btn = form.querySelector('.submit-btn');
-    btn.disabled = true; btn.textContent = 'جاري التسجيل...';
-    try{
-      const res = await fetch(form.action, {
-        method:'POST',
-        body:new FormData(form),
-        headers:{ 'Accept':'application/json' }
+  <script>
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('visible');
+          observer.unobserve(entry.target);
+        }
       });
-      if(res.ok){
-        form.style.display = 'none';
-        success.style.display = 'block';
-      } else {
-        throw new Error('submit failed');
+    }, { threshold: 0.12 });
+
+    document.querySelectorAll('.reveal').forEach((element) => observer.observe(element));
+
+    document.getElementById('interestForm').addEventListener('submit', async function (event) {
+      event.preventDefault();
+      const form = event.currentTarget;
+      const button = form.querySelector('button');
+      const name = form.elements.name.value.trim();
+      const phone = form.elements.phone.value.trim();
+      const size = form.elements['office-size'].value;
+      button.disabled = true;
+      button.textContent = 'جارٍ الإرسال...';
+
+      if (form.action.includes('YOUR_FORM_ID')) {
+        const message = encodeURIComponent(`مرحبًا، أرغب في تجربة LAWRAQ.%0Aالاسم: ${name}%0Aالموبايل: ${phone}%0Aحجم المكتب: ${size}`);
+        window.open(`https://wa.me/2001119155337?text=${message}`, '_blank', 'noopener');
+        button.disabled = false;
+        button.textContent = 'أرغب في تجربة LAWRAQ';
+        return;
       }
-    } catch(err){
-      // fallback: open WhatsApp with prefilled message if form backend isn't configured yet
-      const name = document.getElementById('name').value;
-      const phone = document.getElementById('phone').value;
-      window.open(`https://wa.me/2001119155337?text=${encodeURIComponent('عايز أسجل اهتمامي بـ LAWRAQ — الاسم: '+name+' — التليفون: '+phone)}`, '_blank');
-      btn.disabled = false; btn.textContent = 'سجّل اهتمامي';
-    }
-  });
-</script>
 
-<!--
-  SETUP NOTE (remove this comment once configured):
-  1. Go to formspree.io, create a free account, create a new form.
-  2. Copy your form endpoint (looks like https://formspree.io/f/xxxxxxx).
-  3. Replace "YOUR_FORM_ID" in the <form action="..."> above with your real endpoint.
-  4. Until you do this, submissions will fail silently and fall back to opening
-     WhatsApp with the person's info pre-filled — a safety net, not the primary path.
--->
-
+      try {
+        const response = await fetch(form.action, {
+          method: 'POST',
+          body: new FormData(form),
+          headers: { Accept: 'application/json' }
+        });
+        if (!response.ok) throw new Error('submit failed');
+        form.innerHTML = '<p style="text-align:center;color:#eadcbc;font-weight:800;padding:30px 10px">وصلنا اهتمامك — هنتواصل معك قريبًا.</p>';
+      } catch {
+        const message = encodeURIComponent(`مرحبًا، أرغب في تجربة LAWRAQ.%0Aالاسم: ${name}%0Aالموبايل: ${phone}%0Aحجم المكتب: ${size}`);
+        window.open(`https://wa.me/2001119155337?text=${message}`, '_blank', 'noopener');
+        button.disabled = false;
+        button.textContent = 'أرغب في تجربة LAWRAQ';
+      }
+    });
+  </script>
 </body>
 </html>
