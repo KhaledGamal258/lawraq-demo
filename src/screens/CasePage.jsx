@@ -60,6 +60,8 @@ export default function CasePage({
   caseContent,
   onToggleDocument,
   onToggleUpdate,
+  onAddManualUpdate,
+  onEditUpdate,
   onSendCaseMessage,
   onWhatsAppClick,
   onTemplatesClick,
@@ -83,6 +85,13 @@ export default function CasePage({
   const [confirmArchiveOpen, setConfirmArchiveOpen] = useState(false);
   const [statusMenuOpen, setStatusMenuOpen] = useState(false);
   const [finishPromptDismissed, setFinishPromptDismissed] = useState(false);
+  const [showManualUpdateForm, setShowManualUpdateForm] = useState(false);
+  const [manualUpdateTitle, setManualUpdateTitle] = useState('');
+  const [manualUpdateDesc, setManualUpdateDesc] = useState('');
+  const [manualUpdateVisible, setManualUpdateVisible] = useState(false);
+  const [editingUpdateId, setEditingUpdateId] = useState(null);
+  const [editUpdateTitle, setEditUpdateTitle] = useState('');
+  const [editUpdateDesc, setEditUpdateDesc] = useState('');
 
   const showFinishPrompt = client.status === 'منتهية' && !archived && !finishPromptDismissed;
 
@@ -144,11 +153,47 @@ export default function CasePage({
     setShowAddForm(false);
   };
 
+  const toggleSessionForm = () => {
+    if (showAddForm) {
+      cancelForm();
+      return;
+    }
+    setFormDate(client.nextHearing?.iso || '');
+    setShowAddForm(true);
+  };
+
   const cancelForm = () => {
     setShowAddForm(false);
     setFormDate('');
     setFormDecision('');
     setFormNextDate('');
+  };
+
+  const saveManualUpdate = () => {
+    const title = manualUpdateTitle.trim();
+    const desc = manualUpdateDesc.trim();
+    if (!title || !desc) return;
+    onAddManualUpdate({ title, desc, visible: manualUpdateVisible });
+    setManualUpdateTitle('');
+    setManualUpdateDesc('');
+    setManualUpdateVisible(false);
+    setShowManualUpdateForm(false);
+  };
+
+  const startEditingUpdate = (item) => {
+    setEditingUpdateId(item.id);
+    setEditUpdateTitle(item.title);
+    setEditUpdateDesc(item.desc);
+  };
+
+  const saveEditedUpdate = (updateId) => {
+    const title = editUpdateTitle.trim();
+    const desc = editUpdateDesc.trim();
+    if (!title || !desc) return;
+    onEditUpdate(updateId, { title, desc });
+    setEditingUpdateId(null);
+    setEditUpdateTitle('');
+    setEditUpdateDesc('');
   };
 
   const inputStyle = {
@@ -525,7 +570,7 @@ export default function CasePage({
               {!archived && (
                 <button
                   type="button"
-                  onClick={() => setShowAddForm((f) => !f)}
+                  onClick={toggleSessionForm}
                   style={{ display: 'flex', alignItems: 'center', gap: 6, background: showAddForm ? 'rgba(28,45,79,0.12)' : 'rgba(28,45,79,0.07)', border: 'none', borderRadius: 20, padding: '6px 13px', cursor: 'pointer' }}
                 >
                   <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
@@ -538,29 +583,36 @@ export default function CasePage({
 
             {!archived && showAddForm && (
               <div style={{ background: '#F6F4F0', borderRadius: 10, padding: '14px', marginBottom: 16, border: '1px solid #E8E4DC' }}>
-                <div style={{ color: '#1C2D4F', fontSize: 13, fontWeight: 700, marginBottom: 12 }}>تسجيل جلسة جديدة</div>
+                <div style={{ color: '#1C2D4F', fontSize: 13, fontWeight: 800, marginBottom: 4 }}>تسجيل نتيجة الجلسة</div>
+                <div style={{ color: '#7B8494', fontSize: 10.5, lineHeight: 1.6, marginBottom: 12 }}>
+                  بعد انتهاء الجلسة، سجّل قرار المحكمة. الموعد المسجل مسبقًا يظهر تلقائيًا، وأضف الموعد التالي فقط إذا حددته المحكمة.
+                </div>
                 <div style={{ display: 'flex', gap: 10, marginBottom: 10, flexWrap: 'wrap' }}>
                   <div style={{ flex: '1 1 140px' }}>
-                    <div style={{ color: '#9BA3AF', fontSize: 11, fontWeight: 700, marginBottom: 5 }}>تاريخ الجلسة</div>
+                    <div style={{ color: '#6B7484', fontSize: 11, fontWeight: 700, marginBottom: 5 }}>تاريخ الجلسة التي انتهت</div>
                     <input
                       type="date"
                       value={formDate}
                       onChange={(e) => setFormDate(e.target.value)}
                       onInput={(e) => setFormDate(e.currentTarget.value)}
-                      aria-label="تاريخ الجلسة"
+                      aria-label="تاريخ الجلسة التي انتهت"
                       style={inputStyle}
                     />
+                    {client.nextHearing?.iso && (
+                      <div style={{ color: '#16A34A', fontSize: 9.5, marginTop: 4 }}>✓ تم ملؤه من جدول الجلسات</div>
+                    )}
                   </div>
                   <div style={{ flex: '1 1 140px' }}>
-                    <div style={{ color: '#9BA3AF', fontSize: 11, fontWeight: 700, marginBottom: 5 }}>الجلسة القادمة</div>
+                    <div style={{ color: '#6B7484', fontSize: 11, fontWeight: 700, marginBottom: 5 }}>موعد الجلسة التالية <span style={{ color: '#9BA3AF', fontWeight: 400 }}>(اختياري)</span></div>
                     <input
                       type="date"
                       value={formNextDate}
                       onChange={(e) => setFormNextDate(e.target.value)}
                       onInput={(e) => setFormNextDate(e.currentTarget.value)}
-                      aria-label="تاريخ الجلسة القادمة"
+                      aria-label="موعد الجلسة التالية"
                       style={inputStyle}
                     />
+                    <div style={{ color: '#9BA3AF', fontSize: 9.5, marginTop: 4 }}>اتركه فارغًا إذا لم تحدد المحكمة موعدًا جديدًا</div>
                   </div>
                 </div>
                 <div style={{ marginBottom: 12 }}>
@@ -580,7 +632,7 @@ export default function CasePage({
                     <path d="m13 2-8 12h7l-1 8 8-12h-7l1-8Z" stroke="#B5924A" strokeWidth="1.7" strokeLinejoin="round" />
                   </svg>
                   <div style={{ color: '#7F683C', fontSize: 10.5, lineHeight: 1.6 }}>
-                    عند الحفظ، LAWRAQ يسجل النشاط ويحدّث موعد الجلسة القادمة في بوابة الموكّل تلقائيًا.
+                    عند الحفظ، LAWRAQ يضيف قرار الجلسة للسجل، وإذا أدخلت موعدًا تاليًا يحدّث الجدول وبوابة الموكّل تلقائيًا.
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
@@ -600,7 +652,7 @@ export default function CasePage({
                       cursor: formDecision.trim() ? 'pointer' : 'not-allowed',
                     }}
                   >
-                    حفظ وتشغيل التحديث
+                    حفظ نتيجة الجلسة
                   </button>
                   <button
                     type="button"
@@ -744,11 +796,27 @@ export default function CasePage({
           {/* ACTIVITY TIMELINE */}
           <div>
             <div style={{ marginBottom: 13, padding: '0 2px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
-              <span style={{ color: '#1C2D4F', fontSize: 16, fontWeight: 800 }}>سجل النشاط</span>
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(22,163,74,0.08)', border: '1px solid rgba(22,163,74,0.2)', borderRadius: 20, padding: '4px 9px', color: '#15803D', fontSize: 9.5, fontWeight: 800 }}>
-                <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#16A34A' }} />
-                الأتمتة نشطة
-              </span>
+              <div>
+                <span style={{ color: '#1C2D4F', fontSize: 16, fontWeight: 800 }}>التحديثات وسجل النشاط</span>
+                <div style={{ color: '#9BA3AF', fontSize: 10, marginTop: 3 }}>ما حدث داخل القضية وما يراه الموكّل</div>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 7, flexWrap: 'wrap' }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: 'rgba(22,163,74,0.08)', border: '1px solid rgba(22,163,74,0.2)', borderRadius: 20, padding: '4px 9px', color: '#15803D', fontSize: 9.5, fontWeight: 800 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#16A34A' }} />
+                  الأتمتة نشطة
+                </span>
+                {!archived && (
+                  <button
+                    type="button"
+                    onClick={() => setShowManualUpdateForm((current) => !current)}
+                    aria-label="إضافة تحديث يدوي"
+                    style={{ display: 'inline-flex', alignItems: 'center', gap: 5, background: showManualUpdateForm ? '#1C2D4F' : 'rgba(28,45,79,0.07)', color: showManualUpdateForm ? '#fff' : '#1C2D4F', border: 'none', borderRadius: 20, padding: '6px 10px', fontFamily: "'Almarai',sans-serif", fontSize: 10.5, fontWeight: 800, cursor: 'pointer' }}
+                  >
+                    <span style={{ fontSize: 15, lineHeight: 0.8 }}>+</span>
+                    تحديث يدوي
+                  </button>
+                )}
+              </div>
             </div>
 
             <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', background: '#EEF2F6', border: '1px solid #DCE3EB', borderRadius: 12, padding: '11px 12px', marginBottom: 10 }}>
@@ -760,6 +828,54 @@ export default function CasePage({
                 <div style={{ color: '#6B7484', fontSize: 10.5, lineHeight: 1.6 }}>تسجيل جلسة أو مشاركة مستند أو تغيير الحالة يضيف نشاطًا هنا. أنت تختار فقط هل يظل داخليًا أم يظهر للموكّل.</div>
               </div>
             </div>
+
+            {!archived && showManualUpdateForm && (
+              <div style={{ background: '#fff', border: '1px solid #DED9D0', borderRadius: 12, padding: '13px', marginBottom: 10, boxShadow: '0 2px 12px rgba(0,0,0,0.035)' }}>
+                <div style={{ color: '#1C2D4F', fontSize: 12.5, fontWeight: 800, marginBottom: 10 }}>إضافة تحديث غير مرتبط بإجراء تلقائي</div>
+                <input
+                  value={manualUpdateTitle}
+                  onChange={(event) => setManualUpdateTitle(event.target.value)}
+                  aria-label="عنوان التحديث اليدوي"
+                  placeholder="مثال: تم استلام المستندات المطلوبة"
+                  style={{ ...inputStyle, marginBottom: 8 }}
+                />
+                <textarea
+                  value={manualUpdateDesc}
+                  onChange={(event) => setManualUpdateDesc(event.target.value)}
+                  aria-label="تفاصيل التحديث اليدوي"
+                  placeholder="اكتب وصفًا مختصرًا وواضحًا..."
+                  rows={2}
+                  style={{ ...inputStyle, resize: 'none', lineHeight: 1.6, marginBottom: 10 }}
+                />
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap' }}>
+                  <button
+                    type="button"
+                    aria-pressed={manualUpdateVisible}
+                    onClick={() => setManualUpdateVisible((current) => !current)}
+                    style={{ background: 'transparent', border: 'none', padding: 0, cursor: 'pointer', fontFamily: "'Almarai',sans-serif" }}
+                  >
+                    {manualUpdateVisible ? <VisiblePill compact /> : <NotVisiblePill compact />}
+                  </button>
+                  <div style={{ display: 'flex', gap: 7 }}>
+                    <button
+                      type="button"
+                      onClick={saveManualUpdate}
+                      disabled={!manualUpdateTitle.trim() || !manualUpdateDesc.trim()}
+                      style={{ background: manualUpdateTitle.trim() && manualUpdateDesc.trim() ? '#1C2D4F' : '#E8E4DC', color: manualUpdateTitle.trim() && manualUpdateDesc.trim() ? '#fff' : '#B2B8C2', border: 'none', borderRadius: 18, padding: '7px 13px', fontFamily: "'Almarai',sans-serif", fontSize: 11, fontWeight: 800, cursor: manualUpdateTitle.trim() && manualUpdateDesc.trim() ? 'pointer' : 'not-allowed' }}
+                    >
+                      حفظ التحديث
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowManualUpdateForm(false)}
+                      style={{ background: 'transparent', color: '#8C94A2', border: '1px solid #E3DED5', borderRadius: 18, padding: '7px 12px', fontFamily: "'Almarai',sans-serif", fontSize: 11, fontWeight: 700, cursor: 'pointer' }}
+                    >
+                      إلغاء
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 2px 16px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
               {updates.map((item, idx) => (
@@ -776,20 +892,82 @@ export default function CasePage({
                           {item.source === 'system' && (
                             <span style={{ background: 'rgba(28,45,79,0.07)', color: '#68758A', borderRadius: 6, padding: '2px 6px', fontSize: 8.5, fontWeight: 800 }}>تلقائي</span>
                           )}
+                          {item.source === 'manual' && (
+                            <span style={{ background: 'rgba(201,168,112,0.14)', color: '#98783E', borderRadius: 6, padding: '2px 6px', fontSize: 8.5, fontWeight: 800 }}>يدوي</span>
+                          )}
+                          {item.customized && (
+                            <span style={{ background: 'rgba(59,130,246,0.08)', color: '#5273A4', borderRadius: 6, padding: '2px 6px', fontSize: 8.5, fontWeight: 800 }}>صياغة معدّلة</span>
+                          )}
                         </div>
                       </div>
-                      <div
-                        role={archived ? undefined : 'button'}
-                        tabIndex={archived ? undefined : 0}
-                        onClick={() => toggleUpdate(item.id)}
-                        onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && toggleUpdate(item.id)}
-                        style={{ display: 'inline-flex', cursor: archived ? 'default' : 'pointer', flexShrink: 0, marginTop: 2 }}
-                      >
-                        {item.visible ? <VisiblePill compact /> : <NotVisiblePill compact />}
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
+                        {!archived && (
+                          <button
+                            type="button"
+                            onClick={() => startEditingUpdate(item)}
+                            aria-label={`تعديل تحديث ${item.title}`}
+                            title="تعديل الصياغة"
+                            style={{ width: 26, height: 26, borderRadius: 13, border: '1px solid #E5E1D9', background: '#fff', color: '#6B7484', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer' }}
+                          >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
+                              <path d="m4 20 4.2-1 10.6-10.6a2 2 0 0 0-2.8-2.8L5.4 16.2 4 20Z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          </button>
+                        )}
+                        <div
+                          role={archived ? undefined : 'button'}
+                          tabIndex={archived ? undefined : 0}
+                          onClick={() => toggleUpdate(item.id)}
+                          onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && toggleUpdate(item.id)}
+                          aria-label={item.visible ? `إخفاء تحديث ${item.title} عن الموكّل` : `إظهار تحديث ${item.title} للموكّل`}
+                          style={{ display: 'inline-flex', cursor: archived ? 'default' : 'pointer', marginTop: 2 }}
+                        >
+                          {item.visible ? <VisiblePill compact /> : <NotVisiblePill compact />}
+                        </div>
                       </div>
                     </div>
-                    <div style={{ color: '#5D6579', fontSize: 12.5, lineHeight: 1.6, marginBottom: 6 }}>{item.desc}</div>
-                    <div style={{ color: '#B2B8C2', fontSize: 11 }}>{item.date}</div>
+                    {editingUpdateId === item.id ? (
+                      <div style={{ background: '#F8F6F2', border: '1px solid #E8E4DC', borderRadius: 10, padding: 10, marginTop: 8 }}>
+                        <div style={{ color: '#6B7484', fontSize: 9.5, lineHeight: 1.6, marginBottom: 7 }}>
+                          عدّل الصياغة المعروضة. أصل الحدث الآلي يظل محفوظًا داخل بيانات السجل.
+                        </div>
+                        <input
+                          value={editUpdateTitle}
+                          onChange={(event) => setEditUpdateTitle(event.target.value)}
+                          aria-label="تعديل عنوان التحديث"
+                          style={{ ...inputStyle, marginBottom: 7 }}
+                        />
+                        <textarea
+                          value={editUpdateDesc}
+                          onChange={(event) => setEditUpdateDesc(event.target.value)}
+                          aria-label="تعديل تفاصيل التحديث"
+                          rows={2}
+                          style={{ ...inputStyle, resize: 'none', lineHeight: 1.6, marginBottom: 8 }}
+                        />
+                        <div style={{ display: 'flex', gap: 7 }}>
+                          <button
+                            type="button"
+                            onClick={() => saveEditedUpdate(item.id)}
+                            disabled={!editUpdateTitle.trim() || !editUpdateDesc.trim()}
+                            style={{ background: editUpdateTitle.trim() && editUpdateDesc.trim() ? '#1C2D4F' : '#E8E4DC', color: editUpdateTitle.trim() && editUpdateDesc.trim() ? '#fff' : '#B2B8C2', border: 'none', borderRadius: 16, padding: '6px 12px', fontFamily: "'Almarai',sans-serif", fontSize: 10.5, fontWeight: 800, cursor: editUpdateTitle.trim() && editUpdateDesc.trim() ? 'pointer' : 'not-allowed' }}
+                          >
+                            حفظ الصياغة
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setEditingUpdateId(null)}
+                            style={{ background: 'transparent', color: '#8C94A2', border: '1px solid #E3DED5', borderRadius: 16, padding: '6px 11px', fontFamily: "'Almarai',sans-serif", fontSize: 10.5, fontWeight: 700, cursor: 'pointer' }}
+                          >
+                            إلغاء
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div style={{ color: '#5D6579', fontSize: 12.5, lineHeight: 1.6, marginBottom: 6 }}>{item.desc}</div>
+                        <div style={{ color: '#B2B8C2', fontSize: 11 }}>{item.date}</div>
+                      </>
+                    )}
                   </div>
                 </div>
               ))}

@@ -52,6 +52,14 @@ const DEMO_HEARING_OVERRIDES = {
   ahmed: buildHearingObj(isoDaysFromToday(2), '١٠:٠٠ صباحًا', '١٠:٠٠ ص'),
   mona: buildHearingObj(isoDaysFromToday(4), '١١:٣٠ صباحًا', '١١:٣٠ ص'),
   sara: buildHearingObj(isoDaysFromToday(6), '٩:٠٠ صباحًا', '٩:٠٠ ص'),
+  karim: buildHearingObj(isoDaysFromToday(8), '٩:٣٠ صباحًا', '٩:٣٠ ص'),
+  mahmoud: buildHearingObj(isoDaysFromToday(10), '١٢:٠٠ ظهرًا', '١٢:٠٠ م'),
+  yasmine: buildHearingObj(isoDaysFromToday(12), '١٠:٣٠ صباحًا', '١٠:٣٠ ص'),
+  tarek: buildHearingObj(isoDaysFromToday(14), '١:٠٠ ظهرًا', '١:٠٠ م'),
+  rania: buildHearingObj(isoDaysFromToday(16), '١١:٠٠ صباحًا', '١١:٠٠ ص'),
+  hossam: buildHearingObj(isoDaysFromToday(18), '٩:٠٠ صباحًا', '٩:٠٠ ص'),
+  dalia: buildHearingObj(isoDaysFromToday(20), '١٢:٣٠ ظهرًا', '١٢:٣٠ م'),
+  omar: buildHearingObj(isoDaysFromToday(22), '١٠:٠٠ صباحًا', '١٠:٠٠ ص'),
 };
 
 const DEMO_DEADLINE_OVERRIDES = {
@@ -256,6 +264,43 @@ export default function App() {
       ...content,
       updates: content.updates.map((item) => (item.id === updateId ? { ...item, visible: !item.visible } : item)),
     }));
+  };
+
+  const handleAddManualUpdate = (clientId, update) => {
+    updateCaseContent(clientId, (content) => ({
+      ...content,
+      updates: [
+        {
+          id: generateId('activity'),
+          title: update.title,
+          desc: update.desc,
+          date: 'الآن · أضيف يدويًا',
+          dotColor: '#C9A870',
+          visible: update.visible,
+          source: 'manual',
+        },
+        ...content.updates,
+      ],
+    }));
+    showToast(update.visible ? 'تمت إضافة التحديث وإظهاره للموكّل' : 'تمت إضافة التحديث داخل المكتب');
+  };
+
+  const handleEditUpdate = (clientId, updateId, changes) => {
+    updateCaseContent(clientId, (content) => ({
+      ...content,
+      updates: content.updates.map((item) => {
+        if (item.id !== updateId) return item;
+        return {
+          ...item,
+          originalTitle: item.originalTitle || item.title,
+          originalDesc: item.originalDesc || item.desc,
+          title: changes.title,
+          desc: changes.desc,
+          customized: true,
+        };
+      }),
+    }));
+    showToast('تم حفظ الصياغة الجديدة للتحديث');
   };
 
   const handleCaseMessage = (clientId, from, text) => {
@@ -468,6 +513,8 @@ export default function App() {
         caseContent={getCaseContent(selectedClientId)}
         onToggleDocument={(documentId) => handleToggleDocument(selectedClientId, documentId)}
         onToggleUpdate={(updateId) => handleToggleUpdate(selectedClientId, updateId)}
+        onAddManualUpdate={(update) => handleAddManualUpdate(selectedClientId, update)}
+        onEditUpdate={(updateId, changes) => handleEditUpdate(selectedClientId, updateId, changes)}
         onSendCaseMessage={(text) => handleCaseMessage(selectedClientId, 'lawyer', text)}
         onWhatsAppClick={() => showToast('التكامل مع واتساب — قريبًا')}
         onTemplatesClick={() => showToast('قريبًا — نماذج قانونية جاهزة للاستخدام المباشر')}
@@ -481,7 +528,7 @@ export default function App() {
       />
     );
   } else if (lawyerView === 'team') {
-    content = <TeamView allClients={mergedAllClients} />;
+    content = <TeamView allClients={mergedAllClients} onOpenCase={openCase} />;
   } else if (lawyerView === 'inheritance') {
     content = <InheritanceCalculator />;
   } else {

@@ -16,5 +16,5 @@ export function buildDateObj(iso) {
 export function buildHearingObj(iso, time = '١٠:٠٠ صباحاً', timeShort = '١٠:٠٠ ص') {
   const d = new Date(iso);
   const dateObj = buildDateObj(iso);
-  return { ...dateObj, dayOfWeek: AR_WEEKDAYS[d.getUTCDay()], time, timeShort };
+  return { ...dateObj, iso, dayOfWeek: AR_WEEKDAYS[d.getUTCDay()], time, timeShort };
 }
