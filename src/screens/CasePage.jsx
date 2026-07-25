@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import { team, getTeamMemberById, CASE_STATUS_OPTIONS } from '../data/clients';
+import { CASE_STATUS_OPTIONS } from '../data/clients';
 import { buildDateObj } from '../utils/arabicDate';
 import { openMockDocument, getFileTypeLabel } from '../utils/mockFiles';
 import { generateId } from '../utils/id';
@@ -50,6 +50,9 @@ function NotVisiblePill({ compact }) {
 export default function CasePage({
   client,
   lawyerName,
+  currentMember,
+  teamMembers = [],
+  permissions = {},
   onBack,
   sessions = [],
   onAddSession,
@@ -70,6 +73,10 @@ export default function CasePage({
   onTemplatesClick,
 }) {
   const archived = !!client.archived;
+  const canEdit = !!permissions.editCases;
+  const canShareWithClient = !!permissions.shareWithClient;
+  const canViewInternal = !!permissions.viewInternal;
+  const getTeamMemberById = (id) => teamMembers.find((member) => member.id === id);
   const docs = caseContent.docs;
   const updates = caseContent.updates;
   const messages = caseContent.messages;
@@ -98,7 +105,7 @@ export default function CasePage({
   const canSaveSession = sessionDateValid && !!formDecision.trim();
   const scheduledHearingIsFuture = !!client.nextHearing?.iso && client.nextHearing.iso > todayIso;
 
-  const showFinishPrompt = client.status === 'منتهية' && !archived && !finishPromptDismissed;
+  const showFinishPrompt = canEdit && client.status === 'منتهية' && !archived && !finishPromptDismissed;
 
   const appealDaysLeft = client.appealDeadline ? getDaysRemaining(client.appealDeadline) : null;
   const showAppealBanner = !archived && appealDaysLeft !== null && appealDaysLeft <= 10;
@@ -112,12 +119,12 @@ export default function CasePage({
   };
 
   const toggleDoc = (documentId) => {
-    if (archived) return;
+    if (archived || !canShareWithClient) return;
     onToggleDocument(documentId);
   };
 
   const toggleUpdate = (updateId) => {
-    if (archived) return;
+    if (archived || !canShareWithClient) return;
     onToggleUpdate(updateId);
   };
 
@@ -249,7 +256,7 @@ export default function CasePage({
           <div style={{ color: 'rgba(255,255,255,0.38)', fontSize: 10.5, marginBottom: 2 }}>ملف القضية</div>
           <div style={{ color: '#fff', fontSize: 15, fontWeight: 800, lineHeight: 1.2 }}>{client.caseTitle}</div>
         </div>
-        {!archived ? (
+        {!archived && canEdit ? (
           <div style={{ position: 'relative', flexShrink: 0 }}>
             <button
               type="button"
@@ -290,13 +297,13 @@ export default function CasePage({
             </svg>
             <span style={{ color: '#6B7280', fontSize: 12.5, fontWeight: 700 }}>هذه القضية مؤرشفة — للعرض فقط</span>
           </div>
-          <button
+          {canEdit && <button
             type="button"
             onClick={onRestore}
             style={{ background: '#1C2D4F', color: '#C9A870', border: 'none', borderRadius: 20, padding: '6px 16px', fontSize: 12.5, fontWeight: 700, fontFamily: "'Almarai',sans-serif", cursor: 'pointer' }}
           >
             استعادة
-          </button>
+          </button>}
         </div>
       )}
 
@@ -335,6 +342,15 @@ export default function CasePage({
       )}
 
       <div style={{ padding: '20px 16px 0', maxWidth: 1100, marginInline: 'auto', display: 'flex', flexDirection: 'column', gap: 22 }}>
+        {(!canEdit || !canViewInternal) && (
+          <div style={{ background: '#EEF2F6', border: '1px solid #DCE3EB', borderRadius: 12, padding: '10px 13px', color: '#667184', fontSize: 11, lineHeight: 1.7 }}>
+            أنت داخل حساب {currentMember?.name}. الصلاحيات الحالية:
+            {' '}{canEdit ? 'تعديل القضية متاح' : 'عرض فقط'}
+            {' · '}{canViewInternal ? 'المحتوى الداخلي ظاهر' : 'المحتوى الداخلي مخفي'}
+            {' · '}{canShareWithClient ? 'المشاركة مع الموكّل متاحة' : 'المشاركة مع الموكّل غير متاحة'}.
+          </div>
+        )}
+
         {/* CASE HEADER CARD */}
         <div style={{ background: '#1C2D4F', borderRadius: 18, overflow: 'hidden', boxShadow: '0 10px 32px rgba(28,45,79,0.24)' }}>
           <div style={{ height: 2.5, background: 'linear-gradient(to left, transparent 0%, #C9A870 20%, #C9A870 80%, transparent 100%)' }} />
@@ -343,12 +359,12 @@ export default function CasePage({
               <div style={{ position: 'relative' }}>
                 <button
                   type="button"
-                  onClick={() => !archived && setStatusMenuOpen((o) => !o)}
-                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: client.statusBg, border: `1px solid ${client.statusBorder}`, borderRadius: 20, padding: '4px 12px', cursor: archived ? 'default' : 'pointer', fontFamily: "'Almarai',sans-serif" }}
+                  onClick={() => !archived && canEdit && setStatusMenuOpen((o) => !o)}
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: client.statusBg, border: `1px solid ${client.statusBorder}`, borderRadius: 20, padding: '4px 12px', cursor: archived || !canEdit ? 'default' : 'pointer', fontFamily: "'Almarai',sans-serif" }}
                 >
                   <div style={{ width: 6, height: 6, borderRadius: '50%', background: client.statusColor }} />
                   <span style={{ color: client.statusColor, fontSize: 12, fontWeight: 700 }}>{client.status}</span>
-                  {!archived && (
+                  {!archived && canEdit && (
                     <svg width="9" height="9" viewBox="0 0 24 24" fill="none" style={{ marginRight: 1 }}>
                       <path d="M6 9l6 6 6-6" stroke={client.statusColor} strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
@@ -394,20 +410,20 @@ export default function CasePage({
             <div style={{ position: 'relative', display: 'inline-block', marginBottom: 14 }}>
               <button
                 type="button"
-                onClick={() => !archived && setReassignOpen((o) => !o)}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: 'rgba(255,255,255,0.09)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 20, padding: '5px 12px 5px 10px', cursor: archived ? 'default' : 'pointer', fontFamily: "'Almarai',sans-serif" }}
+                onClick={() => !archived && canEdit && setReassignOpen((o) => !o)}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: 'rgba(255,255,255,0.09)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 20, padding: '5px 12px 5px 10px', cursor: archived || !canEdit ? 'default' : 'pointer', fontFamily: "'Almarai',sans-serif" }}
               >
                 <div style={{ width: 8, height: 8, borderRadius: '50%', background: getTeamMemberById(client.assignedTo)?.avatarColor || '#C9A870', flexShrink: 0 }} />
                 <span style={{ color: 'rgba(255,255,255,0.78)', fontSize: 12, fontWeight: 700 }}>المسند إليه: {getTeamMemberById(client.assignedTo)?.name || '—'}</span>
-                {!archived && (
+                {!archived && canEdit && (
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" style={{ marginRight: 2 }}>
                     <path d="M6 9l6 6 6-6" stroke="rgba(255,255,255,0.45)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 )}
               </button>
-              {!archived && reassignOpen && (
+              {!archived && canEdit && reassignOpen && (
                 <div style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, background: '#fff', borderRadius: 10, boxShadow: '0 8px 28px rgba(0,0,0,0.18)', padding: '6px 0', minWidth: 210, zIndex: 50 }}>
-                  {team.map((member) => (
+                  {teamMembers.filter((member) => member.role !== 'سكرتارية').map((member) => (
                     <button
                       key={member.id}
                       type="button"
@@ -512,7 +528,7 @@ export default function CasePage({
         )}
 
         {/* TEAM DISCUSSION — internal only, never shown to client */}
-        <div>
+        {canViewInternal && <div>
           <div style={{ background: '#fff', borderRadius: 14, border: '1.5px solid rgba(201,168,112,0.4)', boxShadow: '0 2px 16px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
             <div style={{ padding: '14px 15px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, borderBottom: '1px solid rgba(201,168,112,0.25)' }}>
               <span style={{ color: '#B5924A', fontSize: 16, fontWeight: 800 }}>نقاش الفريق</span>
@@ -581,7 +597,7 @@ export default function CasePage({
               </div>
             )}
           </div>
-        </div>
+        </div>}
 
         {/* SESSIONS LOG */}
         <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 2px 16px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
@@ -589,7 +605,7 @@ export default function CasePage({
           <div style={{ padding: '15px 15px 0' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 15 }}>
               <span style={{ color: '#1C2D4F', fontSize: 16, fontWeight: 800 }}>سجل الجلسات</span>
-              {!archived && (
+              {!archived && canEdit && (
                 <button
                   type="button"
                   onClick={toggleSessionForm}
@@ -603,7 +619,7 @@ export default function CasePage({
               )}
             </div>
 
-            {!archived && showAddForm && (
+            {!archived && canEdit && showAddForm && (
               <div style={{ background: '#F6F4F0', borderRadius: 10, padding: '14px', marginBottom: 16, border: '1px solid #E8E4DC' }}>
                 <div style={{ color: '#1C2D4F', fontSize: 13, fontWeight: 800, marginBottom: 4 }}>تسجيل نتيجة الجلسة</div>
                 <div style={{ color: '#7B8494', fontSize: 10.5, lineHeight: 1.6, marginBottom: 12 }}>
@@ -699,7 +715,7 @@ export default function CasePage({
 
             {sessions.length === 0 && !showAddForm ? (
               <div style={{ textAlign: 'center', padding: '24px 16px', color: '#B2B8C2', fontSize: 13 }}>
-                لا توجد جلسات مسجلة بعد — أضف أول جلسة
+                {canEdit ? 'لا توجد جلسات مسجلة بعد — أضف أول جلسة' : 'لا توجد جلسات مسجلة بعد'}
               </div>
             ) : (
               sessions.map((session, idx) => (
@@ -745,7 +761,7 @@ export default function CasePage({
           <div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 13, padding: '0 2px' }}>
               <span style={{ color: '#1C2D4F', fontSize: 16, fontWeight: 800 }}>المستندات</span>
-              {!archived && (
+              {!archived && canEdit && (
                 <button type="button" onClick={() => uploadInputRef.current?.click()} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(28,45,79,0.07)', border: 'none', borderRadius: 20, padding: '6px 13px', cursor: 'pointer', fontFamily: "'Almarai',sans-serif" }}>
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
                     <path d="M12 5v14M5 12h14" stroke="#1C2D4F" strokeWidth="2.2" strokeLinecap="round" />
@@ -773,11 +789,11 @@ export default function CasePage({
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                         <div
-                          role={archived ? undefined : 'button'}
-                          tabIndex={archived ? undefined : 0}
+                          role={archived || !canShareWithClient ? undefined : 'button'}
+                          tabIndex={archived || !canShareWithClient ? undefined : 0}
                           onClick={() => toggleDoc(item.id)}
                           onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && toggleDoc(item.id)}
-                          style={{ display: 'inline-flex', cursor: archived ? 'default' : 'pointer' }}
+                          style={{ display: 'inline-flex', cursor: archived || !canShareWithClient ? 'default' : 'pointer' }}
                         >
                           {item.visible ? <VisiblePill /> : <NotVisiblePill />}
                         </div>
@@ -838,7 +854,7 @@ export default function CasePage({
                   <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#16A34A' }} />
                   الأتمتة نشطة
                 </span>
-                {!archived && (
+                {!archived && canEdit && (
                   <button
                     type="button"
                     onClick={() => setShowManualUpdateForm((current) => !current)}
@@ -862,7 +878,7 @@ export default function CasePage({
               </div>
             </div>
 
-            {!archived && showManualUpdateForm && (
+            {!archived && canEdit && showManualUpdateForm && (
               <div style={{ background: '#fff', border: '1px solid #DED9D0', borderRadius: 12, padding: '13px', marginBottom: 10, boxShadow: '0 2px 12px rgba(0,0,0,0.035)' }}>
                 <div style={{ color: '#1C2D4F', fontSize: 12.5, fontWeight: 800, marginBottom: 10 }}>إضافة تحديث غير مرتبط بإجراء تلقائي</div>
                 <input
@@ -910,9 +926,12 @@ export default function CasePage({
               </div>
             )}
 
-            <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 2px 16px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
+            <div
+              aria-label="قائمة التحديثات وسجل النشاط"
+              style={{ background: '#fff', borderRadius: 14, boxShadow: '0 2px 16px rgba(0,0,0,0.05)', overflowY: 'auto', overflowX: 'hidden', maxHeight: 360, scrollbarGutter: 'stable' }}
+            >
               {updates.map((item, idx) => (
-                <div key={item.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 13, padding: '16px 15px' }}>
+                <div key={item.id} style={{ display: 'flex', alignItems: 'flex-start', gap: 11, padding: '13px 14px', borderBottom: idx < updates.length - 1 ? '1px solid #F2EFE9' : 'none' }}>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 18, flexShrink: 0 }}>
                     <div style={{ width: 10, height: 10, borderRadius: '50%', background: item.dotColor, marginTop: 5, flexShrink: 0 }} />
                     {idx < updates.length - 1 && <div style={{ flex: 1, width: 1.5, background: '#ECE8E0', marginTop: 7, minHeight: 44 }} />}
@@ -934,7 +953,7 @@ export default function CasePage({
                         </div>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 5, flexShrink: 0 }}>
-                        {!archived && (
+                        {!archived && canEdit && (
                           <button
                             type="button"
                             onClick={() => startEditingUpdate(item)}
@@ -948,12 +967,12 @@ export default function CasePage({
                           </button>
                         )}
                         <div
-                          role={archived ? undefined : 'button'}
-                          tabIndex={archived ? undefined : 0}
+                          role={archived || !canShareWithClient ? undefined : 'button'}
+                          tabIndex={archived || !canShareWithClient ? undefined : 0}
                           onClick={() => toggleUpdate(item.id)}
                           onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && toggleUpdate(item.id)}
                           aria-label={item.visible ? `إخفاء تحديث ${item.title} عن الموكّل` : `إظهار تحديث ${item.title} للموكّل`}
-                          style={{ display: 'inline-flex', cursor: archived ? 'default' : 'pointer', marginTop: 2 }}
+                          style={{ display: 'inline-flex', cursor: archived || !canShareWithClient ? 'default' : 'pointer', marginTop: 2 }}
                         >
                           {item.visible ? <VisiblePill compact /> : <NotVisiblePill compact />}
                         </div>
@@ -997,8 +1016,20 @@ export default function CasePage({
                       </div>
                     ) : (
                       <>
-                        <div style={{ color: '#5D6579', fontSize: 12.5, lineHeight: 1.6, marginBottom: 6 }}>{item.desc}</div>
-                        <div style={{ color: '#B2B8C2', fontSize: 11 }}>{item.date}</div>
+                        <div style={{ color: '#5D6579', fontSize: 12, lineHeight: 1.6, marginBottom: 7 }}>{item.desc}</div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap', color: '#9BA3AF', fontSize: 10 }}>
+                          <span style={{ color: '#68758A', fontWeight: 800 }}>
+                            أضافه {item.actorName || (item.source === 'system' ? 'النظام' : currentMember?.name || lawyerName)}
+                          </span>
+                          <span>·</span>
+                          <span>{item.date}</span>
+                          {item.lastEditedByName && (
+                            <span style={{ color: '#5273A4' }}>· آخر تعديل: {item.lastEditedByName}</span>
+                          )}
+                          {item.visibilityChangedByName && (
+                            <span style={{ color: '#5273A4' }}>· غيّر الظهور: {item.visibilityChangedByName}</span>
+                          )}
+                        </div>
                       </>
                     )}
                   </div>
@@ -1017,7 +1048,7 @@ export default function CasePage({
           <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 2px 16px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
             <div style={{ padding: '16px 15px 12px', display: 'flex', flexDirection: 'column', gap: 13 }}>
               {messages.map((msg) => {
-                const senderLabel = msg.from === 'client' ? client.name : lawyerName;
+                const senderLabel = msg.senderName || (msg.from === 'client' ? client.name : lawyerName);
                 return msg.from === 'client' ? (
                   <div key={msg.id} style={{ display: 'flex', justifyContent: 'flex-end' }}>
                     <div style={{ maxWidth: '80%' }}>
@@ -1041,9 +1072,9 @@ export default function CasePage({
             </div>
 
             <div style={{ borderTop: '1px solid #F0ECE5' }} />
-            {archived ? (
+            {archived || !canEdit ? (
               <div style={{ padding: '13px 15px', textAlign: 'center', color: '#B2B8C2', fontSize: 12.5 }}>
-                القضية مؤرشفة — لا يمكن إرسال رسائل جديدة
+                {archived ? 'القضية مؤرشفة — لا يمكن إرسال رسائل جديدة' : 'يمكنك قراءة الرسائل، لكن هذا الحساب لا يملك صلاحية الرد'}
               </div>
             ) : (
               <div style={{ padding: '11px 14px', display: 'flex', alignItems: 'flex-end', gap: 10 }}>

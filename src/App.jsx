@@ -8,7 +8,7 @@ import CasePage from './screens/CasePage';
 import AddClient from './screens/AddClient';
 import TeamView from './screens/TeamView';
 import InheritanceCalculator from './screens/InheritanceCalculator';
-import { clients as clientsData, getClientById, upcomingHearings as upcomingHearingsDefault, getCaseStatusOption, getTeamMemberById } from './data/clients';
+import { clients as clientsData, getClientById, upcomingHearings as upcomingHearingsDefault, getCaseStatusOption, team as defaultTeam } from './data/clients';
 import { clearDemoStore, createDefaultCaseContent, DEMO_STORE_VERSION, loadDemoStore, saveDemoStore } from './data/demoStore';
 import { buildHearingObj, toArNum } from './utils/arabicDate';
 import { generateId } from './utils/id';
@@ -29,15 +29,18 @@ function deriveDefaultCaseStatus(base) {
 
 const LAWYER_NAME = 'أ. نادين سامي';
 
-function createAutomaticActivity({ title, desc, visible = false, dotColor = '#C9A870' }) {
+function createAutomaticActivity({ title, desc, actor, visible = false, dotColor = '#C9A870' }) {
   return {
     id: generateId('activity'),
     title,
     desc,
-    date: 'الآن · أضيف تلقائيًا',
+    date: 'الآن · سجّله النظام تلقائيًا',
     dotColor,
     visible,
     source: 'system',
+    actorId: actor?.id || 'system',
+    actorName: actor?.name || 'النظام',
+    actorRole: actor?.role || 'أتمتة',
   };
 }
 
@@ -175,7 +178,12 @@ export default function App() {
   const [addedClients, setAddedClients] = useState(restoredDemo.addedClients || []);
   const [caseContentMap, setCaseContentMap] = useState(restoredDemo.caseContentMap || {});
   const [teamDiscussionsMap, setTeamDiscussionsMap] = useState(restoredDemo.teamDiscussionsMap || {});
+  const [teamMembers, setTeamMembers] = useState(restoredDemo.teamMembers || defaultTeam);
+  const [currentMemberId, setCurrentMemberId] = useState(restoredDemo.currentMemberId || 'nadine');
   const [toast, setToast] = useState(null);
+  const currentMember = teamMembers.find((member) => member.id === currentMemberId) || teamMembers[0] || defaultTeam[0];
+  const currentPermissions = currentMember.permissions || {};
+  const getTeamMember = (id) => teamMembers.find((member) => member.id === id);
 
   useEffect(() => {
     saveDemoStore({
@@ -188,8 +196,10 @@ export default function App() {
       addedClients,
       caseContentMap,
       teamDiscussionsMap,
+      teamMembers,
+      currentMemberId,
     });
-  }, [sessionsMap, hearingOverrides, assignmentOverrides, archiveOverrides, statusOverrides, addedClients, caseContentMap, teamDiscussionsMap]);
+  }, [sessionsMap, hearingOverrides, assignmentOverrides, archiveOverrides, statusOverrides, addedClients, caseContentMap, teamDiscussionsMap, teamMembers, currentMemberId]);
 
   const showToast = (msg) => {
     setToast(msg);
@@ -217,13 +227,18 @@ export default function App() {
   };
 
   const handleStatusChange = (clientId, newStatus) => {
+    if (!currentPermissions.editCases) {
+      showToast('هذا الحساب لا يملك صلاحية تعديل القضايا');
+      return;
+    }
     setStatusOverrides((prev) => ({ ...prev, [clientId]: newStatus }));
     updateCaseContent(clientId, (content) => ({
       ...content,
       updates: [
         createAutomaticActivity({
           title: 'تم تحديث حالة القضية',
-          desc: `غيّر النظام حالة القضية إلى «${newStatus}» وحدثها في ملف الموكّل.`,
+          desc: `غيّر ${currentMember.name} حالة القضية إلى «${newStatus}» وحدّثها النظام في ملف الموكّل.`,
+          actor: currentMember,
           visible: true,
           dotColor: '#1C2D4F',
         }),
@@ -258,18 +273,26 @@ export default function App() {
   };
 
   const handleTeamMessage = (clientId, text) => {
+    if (!currentPermissions.viewInternal) {
+      showToast('هذا الحساب لا يملك صلاحية الاطلاع على النقاش الداخلي');
+      return;
+    }
     const cleanText = text.trim();
     if (!cleanText) return;
     setTeamDiscussionsMap((prev) => ({
       ...prev,
       [clientId]: [
         ...(prev[clientId] || getTeamDiscussion(clientId)),
-        { id: generateId('team-msg'), from: 'nadine', text: cleanText, time: 'الآن' },
+        { id: generateId('team-msg'), from: currentMember.id, text: cleanText, time: 'الآن' },
       ],
     }));
   };
 
   const handleToggleDocument = (clientId, documentId) => {
+    if (!currentPermissions.shareWithClient) {
+      showToast('هذا الحساب لا يملك صلاحية المشاركة مع الموكّل');
+      return;
+    }
     updateCaseContent(clientId, (content) => {
       const targetDocument = content.docs.find((doc) => doc.id === documentId);
       if (!targetDocument) return content;
@@ -283,6 +306,7 @@ export default function App() {
             desc: willBeVisible
               ? `أصبح «${targetDocument.name}» متاحًا تلقائيًا في بوابة الموكّل.`
               : `أصبح «${targetDocument.name}» داخليًا ولم يعد ظاهرًا في بوابة الموكّل.`,
+            actor: currentMember,
             visible: willBeVisible,
             dotColor: willBeVisible ? '#16A34A' : '#9CA3AF',
           }),
@@ -294,6 +318,10 @@ export default function App() {
   };
 
   const handleAddDocument = (clientId, document) => {
+    if (!currentPermissions.editCases) {
+      showToast('هذا الحساب لا يملك صلاحية إضافة مستندات');
+      return;
+    }
     updateCaseContent(clientId, (content) => ({
       ...content,
       docs: [document, ...content.docs],
@@ -301,6 +329,7 @@ export default function App() {
         createAutomaticActivity({
           title: 'تمت إضافة مستند إلى القضية',
           desc: `أضيف «${document.name}» إلى ملف القضية للاستخدام الداخلي.`,
+          actor: currentMember,
           visible: false,
           dotColor: '#1C2D4F',
         }),
@@ -311,13 +340,31 @@ export default function App() {
   };
 
   const handleToggleUpdate = (clientId, updateId) => {
+    if (!currentPermissions.shareWithClient) {
+      showToast('هذا الحساب لا يملك صلاحية تغيير ما يظهر للموكّل');
+      return;
+    }
     updateCaseContent(clientId, (content) => ({
       ...content,
-      updates: content.updates.map((item) => (item.id === updateId ? { ...item, visible: !item.visible } : item)),
+      updates: content.updates.map((item) => (
+        item.id === updateId
+          ? {
+            ...item,
+            visible: !item.visible,
+            visibilityChangedById: currentMember.id,
+            visibilityChangedByName: currentMember.name,
+          }
+          : item
+      )),
     }));
+    showToast('تم تحديث ظهور النشاط وتسجيل منفّذ الإجراء');
   };
 
   const handleAddManualUpdate = (clientId, update) => {
+    if (!currentPermissions.editCases) {
+      showToast('هذا الحساب لا يملك صلاحية إضافة تحديثات');
+      return;
+    }
     updateCaseContent(clientId, (content) => ({
       ...content,
       updates: [
@@ -329,6 +376,9 @@ export default function App() {
           dotColor: '#C9A870',
           visible: update.visible,
           source: 'manual',
+          actorId: currentMember.id,
+          actorName: currentMember.name,
+          actorRole: currentMember.role,
         },
         ...content.updates,
       ],
@@ -337,6 +387,10 @@ export default function App() {
   };
 
   const handleEditUpdate = (clientId, updateId, changes) => {
+    if (!currentPermissions.editCases) {
+      showToast('هذا الحساب لا يملك صلاحية تعديل التحديثات');
+      return;
+    }
     updateCaseContent(clientId, (content) => ({
       ...content,
       updates: content.updates.map((item) => {
@@ -348,6 +402,8 @@ export default function App() {
           title: changes.title,
           desc: changes.desc,
           customized: true,
+          lastEditedById: currentMember.id,
+          lastEditedByName: currentMember.name,
         };
       }),
     }));
@@ -355,11 +411,22 @@ export default function App() {
   };
 
   const handleCaseMessage = (clientId, from, text) => {
+    if (from !== 'client' && !currentPermissions.editCases) {
+      showToast('هذا الحساب لا يملك صلاحية الرد على الموكّل');
+      return;
+    }
     const cleanText = text.trim();
     if (!cleanText) return;
     updateCaseContent(clientId, (content) => ({
       ...content,
-      messages: [...content.messages, { id: generateId('msg'), from, text: cleanText, time: 'الآن' }],
+      messages: [...content.messages, {
+        id: generateId('msg'),
+        from,
+        text: cleanText,
+        time: 'الآن',
+        senderId: from === 'client' ? clientId : currentMember.id,
+        senderName: from === 'client' ? findBaseClient(clientId)?.name : currentMember.name,
+      }],
     }));
   };
 
@@ -373,9 +440,15 @@ export default function App() {
     setStatusOverrides({});
     setAddedClients([]);
     setTeamDiscussionsMap({});
+    setTeamMembers(defaultTeam);
+    setCurrentMemberId('nadine');
   };
 
   const handleAddClient = (form) => {
+    if (!currentPermissions.editCases) {
+      showToast('هذا الحساب لا يملك صلاحية إضافة قضية');
+      return;
+    }
     const id = `client-${Date.now()}`;
     const palette = NEW_CLIENT_PALETTE[addedClients.length % NEW_CLIENT_PALETTE.length];
     const filedToday = buildHearingObj(new Date().toISOString().slice(0, 10));
@@ -399,7 +472,7 @@ export default function App() {
       filedDate: filedToday.full,
       stage: 'رفع الدعوى',
       activeCases: 1,
-      assignedTo: 'nadine',
+      assignedTo: currentMember.id,
       nextHearing: buildHearingObj(form.hearingDate),
       sessions: [],
       teamDiscussion: [],
@@ -410,6 +483,10 @@ export default function App() {
   };
 
   const handleAddSession = (clientId, session) => {
+    if (!currentPermissions.editCases) {
+      showToast('هذا الحساب لا يملك صلاحية تسجيل الجلسات');
+      return;
+    }
     setSessionsMap((prev) => ({
       ...prev,
       [clientId]: [session, ...(prev[clientId] || [])],
@@ -422,6 +499,7 @@ export default function App() {
         createAutomaticActivity({
           title: 'تم تسجيل نتيجة جلسة جديدة',
           desc: session.decision,
+          actor: currentMember,
           visible: false,
           dotColor: '#1C2D4F',
         }),
@@ -431,6 +509,7 @@ export default function App() {
           createAutomaticActivity({
             title: 'تم تحديث موعد الجلسة القادمة',
             desc: `حدّث النظام الموعد القادم إلى ${session.nextHearing.full} وأظهره في بوابة الموكّل.`,
+            actor: currentMember,
             visible: true,
             dotColor: '#C9A870',
           })
@@ -442,14 +521,19 @@ export default function App() {
   };
 
   const handleReassign = (clientId, newAssigneeId) => {
+    if (!currentPermissions.editCases) {
+      showToast('هذا الحساب لا يملك صلاحية إسناد القضايا');
+      return;
+    }
     setAssignmentOverrides((prev) => ({ ...prev, [clientId]: newAssigneeId }));
-    const assignee = getTeamMemberById(newAssigneeId);
+    const assignee = getTeamMember(newAssigneeId);
     updateCaseContent(clientId, (content) => ({
       ...content,
       updates: [
         createAutomaticActivity({
           title: 'تم تغيير المحامي المسؤول',
           desc: `أُسندت القضية إلى ${assignee?.name || 'عضو آخر في الفريق'}.`,
+          actor: currentMember,
           visible: false,
           dotColor: '#5D6579',
         }),
@@ -460,6 +544,10 @@ export default function App() {
   };
 
   const handleArchive = (clientId) => {
+    if (!currentPermissions.editCases) {
+      showToast('هذا الحساب لا يملك صلاحية أرشفة القضايا');
+      return;
+    }
     setArchiveOverrides((prev) => ({ ...prev, [clientId]: true }));
     updateCaseContent(clientId, (content) => ({
       ...content,
@@ -467,6 +555,7 @@ export default function App() {
         createAutomaticActivity({
           title: 'تم أرشفة القضية',
           desc: 'نقل النظام القضية من القضايا النشطة إلى الأرشيف مع الاحتفاظ بسجلها.',
+          actor: currentMember,
           visible: false,
           dotColor: '#9CA3AF',
         }),
@@ -478,6 +567,10 @@ export default function App() {
   };
 
   const handleRestore = (clientId) => {
+    if (!currentPermissions.editCases) {
+      showToast('هذا الحساب لا يملك صلاحية استعادة القضايا');
+      return;
+    }
     setArchiveOverrides((prev) => ({ ...prev, [clientId]: false }));
     updateCaseContent(clientId, (content) => ({
       ...content,
@@ -485,6 +578,7 @@ export default function App() {
         createAutomaticActivity({
           title: 'تمت استعادة القضية',
           desc: 'أعاد النظام القضية إلى قائمة القضايا النشطة.',
+          actor: currentMember,
           visible: false,
           dotColor: '#16A34A',
         }),
@@ -494,8 +588,57 @@ export default function App() {
     showToast('تمت استعادة القضية إلى النشطين');
   };
 
-  const mergedUpcomingHearings = upcomingHearingsDefault.map((h) => getMergedClient(h.id));
+  const handleAddTeamMember = ({ name, role, permissions }) => {
+    if (!currentPermissions.manageTeam) {
+      showToast('إدارة أعضاء المكتب متاحة لمديرة المكتب فقط');
+      return;
+    }
+    const palette = NEW_CLIENT_PALETTE[teamMembers.length % NEW_CLIENT_PALETTE.length];
+    const member = {
+      id: `member-${Date.now()}`,
+      name: name.trim(),
+      initial: name.trim().charAt(0) || '؟',
+      role,
+      avatarBg: palette.avatarBg,
+      avatarColor: palette.avatarColor,
+      permissions: { ...permissions, manageTeam: false },
+    };
+    setTeamMembers((prev) => [...prev, member]);
+    showToast(`تمت إضافة ${member.name} ويمكن تجربة حسابه الآن`);
+  };
+
+  const handleUpdateTeamPermissions = (memberId, permissions) => {
+    if (!currentPermissions.manageTeam) {
+      showToast('إدارة الصلاحيات متاحة لمديرة المكتب فقط');
+      return;
+    }
+    if (memberId === 'nadine') {
+      showToast('صلاحيات مديرة المكتب الأساسية ثابتة في نسخة العرض');
+      return;
+    }
+    setTeamMembers((prev) => prev.map((member) => (
+      member.id === memberId
+        ? { ...member, permissions: { ...member.permissions, ...permissions, manageTeam: false } }
+        : member
+    )));
+    showToast('تم تحديث صلاحيات الحساب');
+  };
+
+  const handleSwitchAccount = (memberId) => {
+    const target = getTeamMember(memberId);
+    if (!target) return;
+    setCurrentMemberId(memberId);
+    setLawyerView('dashboard');
+    showToast(`أنت الآن داخل حساب ${target.name}`);
+  };
+
   const mergedAllClients = [...clientsData, ...addedClients].map((c) => getMergedClient(c.id));
+  const visibleClients = currentPermissions.viewAllCases
+    ? mergedAllClients
+    : mergedAllClients.filter((client) => client.assignedTo === currentMember.id);
+  const mergedUpcomingHearings = upcomingHearingsDefault
+    .map((hearing) => getMergedClient(hearing.id))
+    .filter((client) => visibleClients.some((visibleClient) => visibleClient.id === client.id));
 
   const goHome = () => {
     if (scopedClientId) {
@@ -525,7 +668,7 @@ export default function App() {
         </div>
       );
     }
-    const portalLawyer = getTeamMemberById(portalClient.assignedTo)?.name || LAWYER_NAME;
+    const portalLawyer = getTeamMember(portalClient.assignedTo)?.name || LAWYER_NAME;
     return (
       <div style={{ minHeight: '100vh', background: '#D9D4CB' }}>
         {!scopedClientId && (
@@ -551,6 +694,10 @@ export default function App() {
   }
 
   const openCase = (id) => {
+    if (!visibleClients.some((client) => client.id === id)) {
+      showToast('هذه القضية خارج نطاق صلاحيات الحساب الحالي');
+      return;
+    }
     setSelectedClientId(id);
     setLawyerView('case');
   };
@@ -560,17 +707,29 @@ export default function App() {
     content = (
       <ClientsView
         onOpenCase={openCase}
-        allClients={mergedAllClients}
+        allClients={visibleClients}
+        teamMembers={teamMembers}
         onCopied={() => showToast('تم نسخ رابط الموكّل ✓')}
         onWhatsAppClick={() => showToast('التكامل مع واتساب — قريبًا')}
       />
     );
   } else if (lawyerView === 'case') {
+    const fullCaseContent = getCaseContent(selectedClientId);
+    const scopedCaseContent = currentPermissions.viewInternal
+      ? fullCaseContent
+      : {
+        ...fullCaseContent,
+        docs: fullCaseContent.docs.filter((document) => document.visible),
+        updates: fullCaseContent.updates.filter((update) => update.visible),
+      };
     content = (
       <CasePage
         key={selectedClientId}
         client={getMergedClient(selectedClientId)}
-        lawyerName={LAWYER_NAME}
+        lawyerName={currentMember.name}
+        currentMember={currentMember}
+        teamMembers={teamMembers}
+        permissions={currentPermissions}
         onBack={() => setLawyerView('clients')}
         sessions={getMergedSessions(selectedClientId)}
         onAddSession={(session) => handleAddSession(selectedClientId, session)}
@@ -578,8 +737,8 @@ export default function App() {
         onArchive={() => handleArchive(selectedClientId)}
         onRestore={() => handleRestore(selectedClientId)}
         onStatusChange={(newStatus) => handleStatusChange(selectedClientId, newStatus)}
-        caseContent={getCaseContent(selectedClientId)}
-        teamMessages={getTeamDiscussion(selectedClientId)}
+        caseContent={scopedCaseContent}
+        teamMessages={currentPermissions.viewInternal ? getTeamDiscussion(selectedClientId) : []}
         onSendTeamMessage={(text) => handleTeamMessage(selectedClientId, text)}
         onAddDocument={(document) => handleAddDocument(selectedClientId, document)}
         onToggleDocument={(documentId) => handleToggleDocument(selectedClientId, documentId)}
@@ -599,17 +758,28 @@ export default function App() {
       />
     );
   } else if (lawyerView === 'team') {
-    content = <TeamView allClients={mergedAllClients} onOpenCase={openCase} />;
+    content = (
+      <TeamView
+        allClients={currentPermissions.manageTeam ? mergedAllClients : visibleClients}
+        onOpenCase={openCase}
+        teamMembers={teamMembers}
+        currentMember={currentMember}
+        onAddMember={handleAddTeamMember}
+        onUpdatePermissions={handleUpdateTeamPermissions}
+      />
+    );
   } else if (lawyerView === 'inheritance') {
     content = <InheritanceCalculator />;
   } else {
     content = (
       <LawyerDashboard
-        lawyerName={LAWYER_NAME}
+        lawyerName={currentMember.name}
+        currentMember={currentMember}
         onOpenCase={openCase}
         onOpenClients={() => setLawyerView('clients')}
         upcomingHearings={mergedUpcomingHearings}
-        allClients={mergedAllClients}
+        allClients={visibleClients}
+        teamMembers={teamMembers}
       />
     );
   }
@@ -620,7 +790,11 @@ export default function App() {
       onNavigate={setLawyerView}
       onAddClient={() => setLawyerView('add')}
       onHome={goHome}
-      lawyerName={LAWYER_NAME}
+      lawyerName={currentMember.name}
+      currentMember={currentMember}
+      teamMembers={teamMembers}
+      onSwitchAccount={handleSwitchAccount}
+      canAddClient={!!currentPermissions.editCases}
     >
       {content}
       {toast && (

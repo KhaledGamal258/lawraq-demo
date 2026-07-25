@@ -1,6 +1,18 @@
 import { useMemo, useState } from 'react';
-import { team } from '../data/clients';
 import { toArNum } from '../utils/arabicDate';
+
+const PERMISSIONS = [
+  { key: 'viewAllCases', label: 'عرض كل القضايا', note: 'بدل الاقتصار على القضايا المسندة للحساب' },
+  { key: 'editCases', label: 'تعديل ملفات القضايا', note: 'الجلسات والحالة والمستندات والرسائل' },
+  { key: 'shareWithClient', label: 'المشاركة مع الموكّل', note: 'التحكم فيما يظهر في بوابة الموكّل' },
+  { key: 'viewInternal', label: 'المحتوى الداخلي', note: 'نقاش الفريق والملاحظات الداخلية' },
+];
+
+const ROLE_DEFAULTS = {
+  محامي: { viewAllCases: false, editCases: true, shareWithClient: true, viewInternal: true },
+  محامية: { viewAllCases: false, editCases: true, shareWithClient: true, viewInternal: true },
+  سكرتارية: { viewAllCases: true, editCases: false, shareWithClient: false, viewInternal: false },
+};
 
 function getLoadState(count) {
   if (count <= 1) return { label: 'متاح', color: '#15803D', bg: 'rgba(22,163,74,0.09)', width: '28%' };
@@ -8,34 +20,66 @@ function getLoadState(count) {
   return { label: 'ضغط مرتفع', color: '#C2413B', bg: 'rgba(239,68,68,0.09)', width: '88%' };
 }
 
-export default function TeamView({ allClients = [], onOpenCase }) {
+export default function TeamView({
+  allClients = [],
+  onOpenCase,
+  teamMembers = [],
+  currentMember,
+  onAddMember,
+  onUpdatePermissions,
+}) {
   const activeClients = useMemo(
     () => allClients.filter((client) => !client.archived && client.status !== 'منتهية'),
     [allClients]
   );
-  const [selectedMemberId, setSelectedMemberId] = useState(team[0]?.id);
+  const [selectedMemberId, setSelectedMemberId] = useState(currentMember?.id || teamMembers[0]?.id);
+  const [showAddMember, setShowAddMember] = useState(false);
+  const [memberName, setMemberName] = useState('');
+  const [memberRole, setMemberRole] = useState('سكرتارية');
+  const canManage = !!currentMember?.permissions?.manageTeam;
 
   const memberCases = useMemo(
     () =>
-      team.reduce((acc, member) => {
+      teamMembers.reduce((acc, member) => {
         acc[member.id] = activeClients.filter((client) => client.assignedTo === member.id);
         return acc;
       }, {}),
-    [activeClients]
+    [activeClients, teamMembers]
   );
 
-  const selectedMember = team.find((member) => member.id === selectedMemberId) || team[0];
+  const selectedMember = teamMembers.find((member) => member.id === selectedMemberId) || teamMembers[0];
   const selectedCases = memberCases[selectedMember?.id] || [];
-  const unassignedCases = activeClients.filter((client) => !team.some((member) => member.id === client.assignedTo));
-  const availableMember = [...team].sort((a, b) => memberCases[a.id].length - memberCases[b.id].length)[0];
+  const unassignedCases = activeClients.filter((client) => !teamMembers.some((member) => member.id === client.assignedTo));
+  const caseAssignableMembers = teamMembers.filter((member) => member.role !== 'سكرتارية');
+  const availableMember = [...caseAssignableMembers].sort((a, b) => memberCases[a.id].length - memberCases[b.id].length)[0];
   const upcomingCount = activeClients.filter((client) => client.nextHearing).length;
+
+  const addMember = () => {
+    const cleanName = memberName.trim();
+    if (!cleanName) return;
+    onAddMember?.({
+      name: cleanName,
+      role: memberRole,
+      permissions: ROLE_DEFAULTS[memberRole] || ROLE_DEFAULTS.سكرتارية,
+    });
+    setMemberName('');
+    setMemberRole('سكرتارية');
+    setShowAddMember(false);
+  };
+
+  const togglePermission = (key) => {
+    if (!canManage || !selectedMember || selectedMember.id === 'nadine') return;
+    onUpdatePermissions?.(selectedMember.id, {
+      [key]: !selectedMember.permissions?.[key],
+    });
+  };
 
   return (
     <div dir="rtl" style={{ fontFamily: "'Almarai',sans-serif", padding: '20px 16px 40px', display: 'flex', flexDirection: 'column', gap: 18 }}>
       <div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
           <span style={{ color: '#1C2D4F', fontSize: 18, fontWeight: 800 }}>فريق المكتب</span>
-          <span style={{ color: '#9BA3AF', fontSize: 12.5 }}>{toArNum(team.length)} أعضاء</span>
+          <span style={{ color: '#9BA3AF', fontSize: 12.5 }}>{toArNum(teamMembers.length)} أعضاء</span>
         </div>
         <div style={{ color: '#7B8494', fontSize: 11.5, marginTop: 6, lineHeight: 1.6 }}>
           صورة سريعة لتوزيع القضايا والضغط على الفريق — تتحدث تلقائيًا عند إسناد أي قضية.
@@ -62,7 +106,7 @@ export default function TeamView({ allClients = [], onOpenCase }) {
           <span style={{ color: '#9BA3AF', fontSize: 10 }}>اضغط على عضو لعرض قضاياه</span>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
-          {team.map((member) => {
+          {teamMembers.map((member) => {
             const count = memberCases[member.id].length;
             const load = getLoadState(count);
             const selected = selectedMemberId === member.id;
@@ -160,14 +204,106 @@ export default function TeamView({ allClients = [], onOpenCase }) {
         </div>
       </div>
 
-      <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 2px 16px rgba(0,0,0,0.05)', padding: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16 }}>
-        <div>
-          <div style={{ color: '#1C2D4F', fontSize: 13.5, fontWeight: 800, marginBottom: 4 }}>دعوة محامٍ جديد للمكتب</div>
-          <div style={{ color: '#B2B8C2', fontSize: 11.5 }}>متاح في المنتج الفعلي بعد تفعيل الحسابات والصلاحيات</div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+        <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 2px 16px rgba(0,0,0,0.05)', padding: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 13 }}>
+            <div>
+              <div style={{ color: '#1C2D4F', fontSize: 13.5, fontWeight: 800 }}>صلاحيات {selectedMember?.name}</div>
+              <div style={{ color: '#9BA3AF', fontSize: 10.5, marginTop: 4 }}>
+                {selectedMember?.id === 'nadine' ? 'صلاحيات مديرة المكتب كاملة وثابتة' : canManage ? 'التغييرات تطبق فورًا على حساب العضو' : 'للعرض فقط — التعديل متاح لمديرة المكتب'}
+              </div>
+            </div>
+            <span style={{ background: selectedMember?.permissions?.manageTeam ? 'rgba(201,168,112,0.15)' : '#F2F0EC', color: selectedMember?.permissions?.manageTeam ? '#98783E' : '#7B8494', borderRadius: 20, padding: '4px 9px', fontSize: 9.5, fontWeight: 800 }}>
+              {selectedMember?.role}
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+            {PERMISSIONS.map((permission) => {
+              const enabled = !!selectedMember?.permissions?.[permission.key];
+              const editable = canManage && selectedMember?.id !== 'nadine';
+              return (
+                <button
+                  type="button"
+                  key={permission.key}
+                  onClick={() => togglePermission(permission.key)}
+                  disabled={!editable}
+                  aria-pressed={enabled}
+                  style={{ width: '100%', background: enabled ? 'rgba(22,163,74,0.055)' : '#FAF9F7', border: `1px solid ${enabled ? 'rgba(22,163,74,0.18)' : '#ECE8E1'}`, borderRadius: 11, padding: '10px 11px', display: 'flex', alignItems: 'center', gap: 10, textAlign: 'right', fontFamily: "'Almarai',sans-serif", cursor: editable ? 'pointer' : 'default' }}
+                >
+                  <span style={{ width: 30, height: 18, borderRadius: 12, background: enabled ? '#16A34A' : '#D8D5CF', padding: 2, display: 'flex', justifyContent: enabled ? 'flex-end' : 'flex-start', flexShrink: 0, transition: '0.2s' }}>
+                    <span style={{ width: 14, height: 14, borderRadius: '50%', background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.18)' }} />
+                  </span>
+                  <span style={{ flex: 1 }}>
+                    <span style={{ display: 'block', color: '#1C2D4F', fontSize: 11.5, fontWeight: 800 }}>{permission.label}</span>
+                    <span style={{ display: 'block', color: '#9BA3AF', fontSize: 9.5, marginTop: 3, lineHeight: 1.5 }}>{permission.note}</span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
-        <button type="button" disabled style={{ background: '#EDEBE6', border: 'none', borderRadius: 20, padding: '8px 15px', color: '#B3B8C0', fontSize: 11.5, fontWeight: 700, fontFamily: "'Almarai',sans-serif", cursor: 'not-allowed', flexShrink: 0 }}>
-          قريبًا
-        </button>
+
+        <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 2px 16px rgba(0,0,0,0.05)', padding: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: showAddMember ? 13 : 0 }}>
+            <div>
+              <div style={{ color: '#1C2D4F', fontSize: 13.5, fontWeight: 800, marginBottom: 4 }}>إضافة حساب لفريق المكتب</div>
+              <div style={{ color: '#9BA3AF', fontSize: 10.5, lineHeight: 1.6 }}>
+                {canManage ? 'أضف محاميًا أو موظف سكرتارية وحدد صلاحياته.' : 'متاحة داخل حساب مديرة المكتب فقط.'}
+              </div>
+            </div>
+            {canManage && (
+              <button
+                type="button"
+                onClick={() => setShowAddMember((current) => !current)}
+                style={{ background: showAddMember ? '#1C2D4F' : 'rgba(28,45,79,0.07)', color: showAddMember ? '#fff' : '#1C2D4F', border: 'none', borderRadius: 20, padding: '7px 13px', fontFamily: "'Almarai',sans-serif", fontSize: 10.5, fontWeight: 800, cursor: 'pointer' }}
+              >
+                {showAddMember ? 'إغلاق' : '+ عضو جديد'}
+              </button>
+            )}
+          </div>
+
+          {showAddMember && canManage && (
+            <div style={{ background: '#F8F6F2', border: '1px solid #E8E4DC', borderRadius: 12, padding: 13 }}>
+              <label htmlFor="team-member-name" style={{ display: 'block', color: '#697386', fontSize: 10.5, fontWeight: 700, marginBottom: 6 }}>اسم العضو</label>
+              <input
+                id="team-member-name"
+                value={memberName}
+                onChange={(event) => setMemberName(event.target.value)}
+                placeholder="مثال: هند محمد"
+                style={{ width: '100%', boxSizing: 'border-box', background: '#fff', border: '1px solid #DED9D0', borderRadius: 10, padding: '10px 11px', fontFamily: "'Almarai',sans-serif", color: '#1C2D4F', outline: 'none', marginBottom: 10 }}
+              />
+              <label htmlFor="team-member-role" style={{ display: 'block', color: '#697386', fontSize: 10.5, fontWeight: 700, marginBottom: 6 }}>الدور</label>
+              <select
+                id="team-member-role"
+                value={memberRole}
+                onChange={(event) => setMemberRole(event.target.value)}
+                style={{ width: '100%', boxSizing: 'border-box', background: '#fff', border: '1px solid #DED9D0', borderRadius: 10, padding: '10px 11px', fontFamily: "'Almarai',sans-serif", color: '#1C2D4F', outline: 'none', marginBottom: 11 }}
+              >
+                <option value="سكرتارية">سكرتارية</option>
+                <option value="محامي">محامي</option>
+                <option value="محامية">محامية</option>
+              </select>
+              <div style={{ color: '#7B8494', fontSize: 9.5, lineHeight: 1.6, marginBottom: 11 }}>
+                سنطبّق صلاحيات مبدئية مناسبة للدور، ويمكن تعديلها من بطاقة الصلاحيات بعد الإضافة.
+              </div>
+              <button
+                type="button"
+                onClick={addMember}
+                disabled={!memberName.trim()}
+                style={{ width: '100%', background: memberName.trim() ? '#1C2D4F' : '#E4E1DB', color: memberName.trim() ? '#C9A870' : '#AAAEB6', border: 'none', borderRadius: 20, padding: '9px 14px', fontFamily: "'Almarai',sans-serif", fontSize: 11.5, fontWeight: 800, cursor: memberName.trim() ? 'pointer' : 'not-allowed' }}
+              >
+                إضافة الحساب
+              </button>
+            </div>
+          )}
+
+          {!showAddMember && (
+            <div style={{ marginTop: 14, background: '#EEF2F6', border: '1px solid #DCE3EB', borderRadius: 11, padding: '11px 12px', color: '#667184', fontSize: 10.5, lineHeight: 1.7 }}>
+              من قائمة الحساب أسفل الشريط الجانبي تقدر تدخل كأي عضو وتشوف المنصة من منظوره.
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

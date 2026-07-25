@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { clients as clientsDefault, caseTypes, courts, governorates, getTeamMemberById } from '../data/clients';
+import { clients as clientsDefault, caseTypes, courts, governorates, team as defaultTeam } from '../data/clients';
 import WhatsAppButton from '../components/WhatsAppButton';
 
 function buildClientLink(id) {
@@ -24,7 +24,8 @@ function selectStyle() {
   };
 }
 
-export default function ClientsView({ onOpenCase, allClients = clientsDefault, onCopied, onWhatsAppClick }) {
+export default function ClientsView({ onOpenCase, allClients = clientsDefault, teamMembers = defaultTeam, onCopied, onWhatsAppClick }) {
+  const getTeamMemberById = (id) => teamMembers.find((member) => member.id === id);
   const [tab, setTab] = useState('active');
   const [search, setSearch] = useState('');
   const [caseType, setCaseType] = useState('');

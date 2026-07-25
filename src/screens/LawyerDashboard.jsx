@@ -1,15 +1,22 @@
 import { useState } from 'react';
-import { upcomingHearings as upcomingHearingsDefault, getTeamMemberById } from '../data/clients';
+import { upcomingHearings as upcomingHearingsDefault, team as defaultTeam } from '../data/clients';
 import { getUrgentDeadlines, getUrgencyStyle, formatDeadlineMessage } from '../utils/deadlines';
 import { toArNum } from '../utils/arabicDate';
 
-const OWNER_ID = 'nadine';
-
-export default function LawyerDashboard({ lawyerName, onOpenCase, onOpenClients, upcomingHearings = upcomingHearingsDefault, allClients = [] }) {
+export default function LawyerDashboard({
+  lawyerName,
+  currentMember,
+  teamMembers = defaultTeam,
+  onOpenCase,
+  onOpenClients,
+  upcomingHearings = upcomingHearingsDefault,
+  allClients = [],
+}) {
   const [filter, setFilter] = useState('all'); // 'all' | 'mine'
+  const getTeamMemberById = (id) => teamMembers.find((member) => member.id === id);
 
   const displayedHearings = filter === 'mine'
-    ? upcomingHearings.filter((h) => h.assignedTo === OWNER_ID)
+    ? upcomingHearings.filter((h) => h.assignedTo === currentMember?.id)
     : upcomingHearings;
 
   const urgentDeadlines = getUrgentDeadlines(allClients);
@@ -42,7 +49,7 @@ export default function LawyerDashboard({ lawyerName, onOpenCase, onOpenClients,
               { value: toArNum(activeCases.length), label: 'قضية\nجارية' },
               { value: toArNum(upcomingHearings.length), label: 'جلسات\nقادمة' },
             ].map((stat) => (
-              <div key={stat.value} style={{ flex: 1, background: 'rgba(255,255,255,0.07)', borderRadius: 10, padding: '12px 8px', textAlign: 'center' }}>
+              <div key={stat.label} style={{ flex: 1, background: 'rgba(255,255,255,0.07)', borderRadius: 10, padding: '12px 8px', textAlign: 'center' }}>
                 <div style={{ color: '#C9A870', fontSize: 22, fontWeight: 800, lineHeight: 1 }}>{stat.value}</div>
                 <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: 10, marginTop: 5, lineHeight: 1.5 }}>
                   {stat.label.split('\n').map((line, i) => (

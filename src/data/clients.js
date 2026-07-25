@@ -1,9 +1,42 @@
 // Mock data only — demo, no real clients/cases.
 
 export const team = [
-  { id: 'nadine', name: 'أ. نادين سامي', initial: 'ن', role: 'صاحب المكتب', avatarBg: '#1C2D4F', avatarColor: '#C9A870' },
-  { id: 'karim_j', name: 'أ. كريم الجندي', initial: 'ك', role: 'محامي', avatarBg: 'rgba(59,130,246,0.1)', avatarColor: '#3B82F6' },
-  { id: 'sara_a', name: 'أ. سارة عبد الله', initial: 'س', role: 'محامي', avatarBg: 'rgba(20,184,166,0.1)', avatarColor: '#14B8A6' },
+  {
+    id: 'nadine',
+    name: 'أ. نادين سامي',
+    initial: 'ن',
+    role: 'مديرة المكتب',
+    avatarBg: '#1C2D4F',
+    avatarColor: '#C9A870',
+    permissions: { viewAllCases: true, editCases: true, shareWithClient: true, viewInternal: true, manageTeam: true },
+  },
+  {
+    id: 'karim_j',
+    name: 'أ. كريم الجندي',
+    initial: 'ك',
+    role: 'محامي',
+    avatarBg: 'rgba(59,130,246,0.1)',
+    avatarColor: '#3B82F6',
+    permissions: { viewAllCases: false, editCases: true, shareWithClient: true, viewInternal: true, manageTeam: false },
+  },
+  {
+    id: 'sara_a',
+    name: 'أ. سارة عبد الله',
+    initial: 'س',
+    role: 'محامية',
+    avatarBg: 'rgba(20,184,166,0.1)',
+    avatarColor: '#14B8A6',
+    permissions: { viewAllCases: false, editCases: true, shareWithClient: true, viewInternal: true, manageTeam: false },
+  },
+  {
+    id: 'mariam_s',
+    name: 'مريم حسن',
+    initial: 'م',
+    role: 'سكرتارية',
+    avatarBg: 'rgba(139,92,246,0.1)',
+    avatarColor: '#8B5CF6',
+    permissions: { viewAllCases: true, editCases: false, shareWithClient: false, viewInternal: false, manageTeam: false },
+  },
 ];
 
 export function getTeamMemberById(id) {

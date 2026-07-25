@@ -42,6 +42,11 @@ const DOCUMENTS_BY_CASE_TYPE = {
 };
 
 const TYPE_MAP = { PDF: 'pdf', DOCX: 'word', JPG: 'image' };
+const TEAM_MEMBER_NAMES = {
+  nadine: 'أ. نادين سامي',
+  karim_j: 'أ. كريم الجندي',
+  sara_a: 'أ. سارة عبد الله',
+};
 
 function createDocuments(client) {
   const seeds = DOCUMENTS_BY_CASE_TYPE[client?.caseType] || [
@@ -70,6 +75,8 @@ function createUpdates(client) {
         dotColor: '#16A34A',
         visible: true,
         source: 'system',
+        actorId: 'nadine',
+        actorName: 'أ. نادين سامي',
       },
       {
         id: 'update-2',
@@ -79,6 +86,8 @@ function createUpdates(client) {
         dotColor: '#1C2D4F',
         visible: true,
         source: 'system',
+        actorId: 'nadine',
+        actorName: 'أ. نادين سامي',
       },
     ];
   }
@@ -93,6 +102,8 @@ function createUpdates(client) {
       dotColor: '#C9A870',
       visible: true,
       source: 'system',
+      actorId: client.assignedTo || 'nadine',
+      actorName: TEAM_MEMBER_NAMES[client.assignedTo] || 'أ. نادين سامي',
     }] : []),
     {
       id: 'update-1',
@@ -102,6 +113,8 @@ function createUpdates(client) {
       dotColor: '#1C2D4F',
       visible: true,
       source: 'system',
+      actorId: client?.assignedTo || 'nadine',
+      actorName: TEAM_MEMBER_NAMES[client?.assignedTo] || 'أ. نادين سامي',
     },
     {
       id: 'update-2',
@@ -113,6 +126,8 @@ function createUpdates(client) {
       dotColor: '#C9A870',
       visible: true,
       source: 'system',
+      actorId: 'nadine',
+      actorName: 'أ. نادين سامي',
     },
     {
       id: 'update-3',
@@ -122,6 +137,8 @@ function createUpdates(client) {
       dotColor: '#B2B8C2',
       visible: false,
       source: 'manual',
+      actorId: 'nadine',
+      actorName: 'أ. نادين سامي',
     },
   ];
 }
@@ -137,6 +154,8 @@ function createMessages(client) {
     {
       id: 'msg-2',
       from: 'lawyer',
+      senderId: 'nadine',
+      senderName: 'أ. نادين سامي',
       text: 'أهلًا بحضرتك، تم تحديث الملف وكل المستجدات المسموح بمشاركتها هتظهر هنا أولًا بأول.',
       time: '١٠:٣٢ ص · ١٢ يونيو',
     },
@@ -149,8 +168,8 @@ function createMessages(client) {
   ];
 }
 
-export const DEMO_STORAGE_KEY = 'lawraq-demo-v3-store';
-export const DEMO_STORE_VERSION = 3;
+export const DEMO_STORAGE_KEY = 'lawraq-demo-v4-store';
+export const DEMO_STORE_VERSION = 4;
 
 export function createDefaultCaseContent(client) {
   return {

@@ -16,7 +16,18 @@ function NavIcon({ active }) {
   );
 }
 
-export default function LawyerLayout({ activeView, onNavigate, onAddClient, onHome, lawyerName, children }) {
+export default function LawyerLayout({
+  activeView,
+  onNavigate,
+  onAddClient,
+  onHome,
+  lawyerName,
+  currentMember,
+  teamMembers = [],
+  onSwitchAccount,
+  canAddClient = true,
+  children,
+}) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
   const navButton = (item, mobile = false) => {
@@ -71,27 +82,45 @@ export default function LawyerLayout({ activeView, onNavigate, onAddClient, onHo
           {NAV_ITEMS.map((item) => navButton(item))}
         </div>
 
-        <button
-          type="button"
-          onClick={onAddClient}
-          style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: 'rgba(201,168,112,0.14)', border: '1px solid rgba(201,168,112,0.3)', borderRadius: 20, padding: '9px 14px', cursor: 'pointer' }}
-        >
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-            <path d="M12 5v14M5 12h14" stroke="#C9A870" strokeWidth="2.2" strokeLinecap="round" />
-          </svg>
-          <span style={{ color: '#C9A870', fontSize: 12.5, fontWeight: 700 }}>قضية جديدة</span>
-        </button>
+        {canAddClient && (
+          <button
+            type="button"
+            onClick={onAddClient}
+            style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: 'rgba(201,168,112,0.14)', border: '1px solid rgba(201,168,112,0.3)', borderRadius: 20, padding: '9px 14px', cursor: 'pointer' }}
+          >
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+              <path d="M12 5v14M5 12h14" stroke="#C9A870" strokeWidth="2.2" strokeLinecap="round" />
+            </svg>
+            <span style={{ color: '#C9A870', fontSize: 12.5, fontWeight: 700 }}>قضية جديدة</span>
+          </button>
+        )}
 
         <div style={{ flex: 1 }} />
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+        <div style={{ paddingTop: 14, borderTop: '1px solid rgba(255,255,255,0.08)' }}>
+          <div style={{ color: 'rgba(255,255,255,0.38)', fontSize: 9.5, fontWeight: 700, marginBottom: 7 }}>تجربة حساب الفريق</div>
+          <select
+            value={currentMember?.id || ''}
+            onChange={(event) => onSwitchAccount?.(event.target.value)}
+            aria-label="تبديل حساب فريق المكتب"
+            style={{ width: '100%', background: 'rgba(255,255,255,0.08)', color: '#fff', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 9, padding: '8px 9px', fontFamily: "'Almarai',sans-serif", fontSize: 10.5, fontWeight: 700, outline: 'none', marginBottom: 11 }}
+          >
+            {teamMembers.map((member) => (
+              <option key={member.id} value={member.id} style={{ color: '#1C2D4F' }}>{member.name} — {member.role}</option>
+            ))}
+          </select>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'rgba(201,168,112,0.17)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none">
               <circle cx="12" cy="8" r="3.5" fill="#C9A870" />
               <path d="M5 20c0-3.866 3.134-7 7-7s7 3.134 7 7" stroke="#C9A870" strokeWidth="1.5" strokeLinecap="round" />
             </svg>
           </div>
-          <div style={{ color: '#fff', fontSize: 12.5, fontWeight: 700 }}>{lawyerName}</div>
+            <div>
+              <div style={{ color: '#fff', fontSize: 11.5, fontWeight: 800 }}>{lawyerName}</div>
+              <div style={{ color: 'rgba(255,255,255,0.38)', fontSize: 9, marginTop: 3 }}>{currentMember?.role}</div>
+            </div>
+          </div>
         </div>
       </aside>
 
@@ -113,20 +142,35 @@ export default function LawyerLayout({ activeView, onNavigate, onAddClient, onHo
             <div dir="ltr" style={{ color: '#C9A870', fontSize: 10, fontWeight: 800, letterSpacing: 1 }}>LAWRAQ</div>
             <div style={{ color: '#fff', fontSize: 14, fontWeight: 800 }}>{NAV_ITEMS.find((n) => n.key === activeView)?.label ?? ''}</div>
           </div>
-          <button
-            type="button"
-            onClick={onAddClient}
-            aria-label="قضية جديدة"
-            style={{ width: 36, height: 36, borderRadius: 18, background: 'rgba(201,168,112,0.14)', border: '1.5px solid rgba(201,168,112,0.32)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-              <path d="M12 5v14M5 12h14" stroke="#C9A870" strokeWidth="2.2" strokeLinecap="round" />
-            </svg>
-          </button>
+          {canAddClient ? (
+            <button
+              type="button"
+              onClick={onAddClient}
+              aria-label="قضية جديدة"
+              style={{ width: 36, height: 36, borderRadius: 18, background: 'rgba(201,168,112,0.14)', border: '1.5px solid rgba(201,168,112,0.32)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }}
+            >
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                <path d="M12 5v14M5 12h14" stroke="#C9A870" strokeWidth="2.2" strokeLinecap="round" />
+              </svg>
+            </button>
+          ) : <div style={{ width: 36 }} />}
 
           {mobileNavOpen && (
             <div style={{ position: 'absolute', top: '100%', insetInline: 0, background: '#1C2D4F', padding: '10px 16px 16px', display: 'flex', flexDirection: 'column', gap: 4, zIndex: 30, boxShadow: '0 12px 24px rgba(0,0,0,0.18)' }}>
               {NAV_ITEMS.map((item) => navButton(item, true))}
+              <select
+                value={currentMember?.id || ''}
+                onChange={(event) => {
+                  onSwitchAccount?.(event.target.value);
+                  setMobileNavOpen(false);
+                }}
+                aria-label="تبديل حساب فريق المكتب"
+                style={{ width: '100%', background: 'rgba(255,255,255,0.08)', color: '#fff', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 9, padding: '9px 11px', fontFamily: "'Almarai',sans-serif", fontSize: 11, fontWeight: 700 }}
+              >
+                {teamMembers.map((member) => (
+                  <option key={member.id} value={member.id} style={{ color: '#1C2D4F' }}>{member.name} — {member.role}</option>
+                ))}
+              </select>
               <button
                 type="button"
                 onClick={() => {
