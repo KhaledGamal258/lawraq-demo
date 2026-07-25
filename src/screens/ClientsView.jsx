@@ -1,6 +1,45 @@
 import { useMemo, useState } from 'react';
 import { clients as clientsDefault, caseTypes, courts, governorates, team as defaultTeam } from '../data/clients';
 import WhatsAppButton from '../components/WhatsAppButton';
+import { toArNum } from '../utils/arabicDate';
+
+const CLIENTS_PER_PAGE = 6;
+
+function Pagination({ page, pageCount, onChange }) {
+  if (pageCount <= 1) return null;
+  return (
+    <nav aria-label="صفحات الموكّلين" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}>
+      <button
+        type="button"
+        onClick={() => onChange(Math.max(1, page - 1))}
+        disabled={page === 1}
+        style={{ background: '#fff', border: '1px solid #E5E1D9', borderRadius: 18, padding: '7px 12px', color: page === 1 ? '#C3C7CE' : '#1C2D4F', fontFamily: "'Almarai',sans-serif", fontSize: 10.5, fontWeight: 800, cursor: page === 1 ? 'default' : 'pointer' }}
+      >
+        السابق
+      </button>
+      {Array.from({ length: pageCount }, (_, index) => index + 1).map((pageNumber) => (
+        <button
+          type="button"
+          key={pageNumber}
+          onClick={() => onChange(pageNumber)}
+          aria-current={pageNumber === page ? 'page' : undefined}
+          aria-label={`صفحة ${pageNumber}`}
+          style={{ width: 32, height: 32, borderRadius: 16, background: pageNumber === page ? '#1C2D4F' : '#fff', border: pageNumber === page ? '1px solid #1C2D4F' : '1px solid #E5E1D9', color: pageNumber === page ? '#C9A870' : '#6B7484', fontFamily: "'Almarai',sans-serif", fontSize: 11, fontWeight: 800, cursor: 'pointer' }}
+        >
+          {toArNum(pageNumber)}
+        </button>
+      ))}
+      <button
+        type="button"
+        onClick={() => onChange(Math.min(pageCount, page + 1))}
+        disabled={page === pageCount}
+        style={{ background: '#fff', border: '1px solid #E5E1D9', borderRadius: 18, padding: '7px 12px', color: page === pageCount ? '#C3C7CE' : '#1C2D4F', fontFamily: "'Almarai',sans-serif", fontSize: 10.5, fontWeight: 800, cursor: page === pageCount ? 'default' : 'pointer' }}
+      >
+        التالي
+      </button>
+    </nav>
+  );
+}
 
 function buildClientLink(id) {
   const url = new URL(window.location.href);
@@ -32,6 +71,7 @@ export default function ClientsView({ onOpenCase, allClients = clientsDefault, t
   const [court, setCourt] = useState('');
   const [governorate, setGovernorate] = useState('');
   const [copiedId, setCopiedId] = useState(null);
+  const [page, setPage] = useState(1);
 
   const tabClients = useMemo(
     () => allClients.filter((c) => (tab === 'archived' ? c.archived : !c.archived)),
@@ -48,6 +88,10 @@ export default function ClientsView({ onOpenCase, allClients = clientsDefault, t
     });
   }, [tabClients, search, caseType, court, governorate]);
 
+  const pageCount = Math.max(1, Math.ceil(filtered.length / CLIENTS_PER_PAGE));
+  const activePage = Math.min(page, pageCount);
+  const paginatedClients = filtered.slice((activePage - 1) * CLIENTS_PER_PAGE, activePage * CLIENTS_PER_PAGE);
+
   const emptyMessage = tab === 'archived' ? 'لا توجد قضايا مؤرشفة مطابقة' : 'لا يوجد موكّلون مطابقون';
 
   const onCopyLink = (id) => {
@@ -62,7 +106,7 @@ export default function ClientsView({ onOpenCase, allClients = clientsDefault, t
     <div style={{ padding: '20px 16px 40px', display: 'flex', flexDirection: 'column', gap: 18 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
         <span style={{ color: '#1C2D4F', fontSize: 18, fontWeight: 800 }}>الموكّلون</span>
-        <span style={{ color: '#9BA3AF', fontSize: 12.5 }}>{filtered.length} من {tabClients.length}</span>
+        <span style={{ color: '#9BA3AF', fontSize: 12.5 }}>{toArNum(filtered.length)} من {toArNum(tabClients.length)}</span>
       </div>
 
       {/* Active / Archive tabs */}
@@ -74,7 +118,10 @@ export default function ClientsView({ onOpenCase, allClients = clientsDefault, t
           <button
             key={opt.key}
             type="button"
-            onClick={() => setTab(opt.key)}
+            onClick={() => {
+              setTab(opt.key);
+              setPage(1);
+            }}
             style={{
               background: tab === opt.key ? '#1C2D4F' : 'transparent',
               border: 'none',
@@ -98,24 +145,27 @@ export default function ClientsView({ onOpenCase, allClients = clientsDefault, t
         <input
           type="text"
           value={search}
-          onChange={(e) => setSearch(e.target.value)}
+          onChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1);
+          }}
           placeholder="بحث بالاسم..."
           aria-label="بحث بالاسم"
           style={{ flex: '1 1 200px', background: '#F6F4F0', border: '1.5px solid #ECE8E0', borderRadius: 10, padding: '9px 12px', fontFamily: "'Almarai',sans-serif", fontSize: 13, color: '#1C2D4F', outline: 'none' }}
         />
-        <select value={caseType} onChange={(e) => setCaseType(e.target.value)} style={{ ...selectStyle(), flex: '1 1 130px' }}>
+        <select value={caseType} onChange={(e) => { setCaseType(e.target.value); setPage(1); }} style={{ ...selectStyle(), flex: '1 1 130px' }}>
           <option value="">كل أنواع القضايا</option>
           {caseTypes.map((t) => (
             <option key={t} value={t}>{t}</option>
           ))}
         </select>
-        <select value={court} onChange={(e) => setCourt(e.target.value)} style={{ ...selectStyle(), flex: '1 1 160px' }}>
+        <select value={court} onChange={(e) => { setCourt(e.target.value); setPage(1); }} style={{ ...selectStyle(), flex: '1 1 160px' }}>
           <option value="">كل المحاكم</option>
           {courts.map((c) => (
             <option key={c} value={c}>{c}</option>
           ))}
         </select>
-        <select value={governorate} onChange={(e) => setGovernorate(e.target.value)} style={{ ...selectStyle(), flex: '1 1 130px' }}>
+        <select value={governorate} onChange={(e) => { setGovernorate(e.target.value); setPage(1); }} style={{ ...selectStyle(), flex: '1 1 130px' }}>
           <option value="">كل المحافظات</option>
           {governorates.map((g) => (
             <option key={g} value={g}>{g}</option>
@@ -134,7 +184,7 @@ export default function ClientsView({ onOpenCase, allClients = clientsDefault, t
             </tr>
           </thead>
           <tbody>
-            {filtered.map((c) => (
+            {paginatedClients.map((c) => (
               <tr key={c.id} style={{ borderTop: '1px solid #F0ECE5' }}>
                 <td style={{ padding: '12px 16px', cursor: 'pointer' }} onClick={() => onOpenCase(c.id)}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -184,7 +234,7 @@ export default function ClientsView({ onOpenCase, allClients = clientsDefault, t
 
       {/* Mobile cards */}
       <div className="flex md:hidden" style={{ flexDirection: 'column', gap: 10 }}>
-        {filtered.map((c) => (
+        {paginatedClients.map((c) => (
           <div key={c.id} style={{ background: '#fff', borderRadius: 14, padding: '14px 15px', boxShadow: '0 2px 14px rgba(0,0,0,0.05)' }}>
             <div role="button" tabIndex={0} onClick={() => onOpenCase(c.id)} onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && onOpenCase(c.id)} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, cursor: 'pointer' }}>
               <div style={{ width: 40, height: 40, borderRadius: 11, background: c.avatarBg, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, fontSize: 16, fontWeight: 800, color: c.avatarColor }}>{c.initial}</div>
@@ -226,6 +276,13 @@ export default function ClientsView({ onOpenCase, allClients = clientsDefault, t
           <div style={{ padding: '24px 16px', textAlign: 'center', color: '#9BA3AF', fontSize: 13, background: '#fff', borderRadius: 14 }}>{emptyMessage}</div>
         )}
       </div>
+
+      <Pagination page={activePage} pageCount={pageCount} onChange={setPage} />
+      {filtered.length > CLIENTS_PER_PAGE && (
+        <div style={{ textAlign: 'center', color: '#A0A7B2', fontSize: 10.5 }}>
+          عرض {toArNum((activePage - 1) * CLIENTS_PER_PAGE + 1)}–{toArNum(Math.min(activePage * CLIENTS_PER_PAGE, filtered.length))} من {toArNum(filtered.length)} موكّلين
+        </div>
+      )}
     </div>
   );
 }

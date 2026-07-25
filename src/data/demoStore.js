@@ -168,8 +168,8 @@ function createMessages(client) {
   ];
 }
 
-export const DEMO_STORAGE_KEY = 'lawraq-demo-v4-store';
-export const DEMO_STORE_VERSION = 4;
+export const DEMO_STORAGE_KEY = 'lawraq-demo-v5-store';
+export const DEMO_STORE_VERSION = 5;
 
 export function createDefaultCaseContent(client) {
   return {

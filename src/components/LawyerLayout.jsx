@@ -29,6 +29,11 @@ export default function LawyerLayout({
   children,
 }) {
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const visibleNavItems = NAV_ITEMS.filter((item) => (
+    item.key !== 'team'
+    || currentMember?.permissions?.viewTeamWorkload
+    || currentMember?.permissions?.manageTeam
+  ));
 
   const navButton = (item, mobile = false) => {
     const isActive = activeView === item.key;
@@ -79,7 +84,7 @@ export default function LawyerLayout({
         </button>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginBottom: 24 }}>
-          {NAV_ITEMS.map((item) => navButton(item))}
+          {visibleNavItems.map((item) => navButton(item))}
         </div>
 
         {canAddClient && (
@@ -140,7 +145,7 @@ export default function LawyerLayout({
           </button>
           <div style={{ textAlign: 'center' }}>
             <div dir="ltr" style={{ color: '#C9A870', fontSize: 10, fontWeight: 800, letterSpacing: 1 }}>LAWRAQ</div>
-            <div style={{ color: '#fff', fontSize: 14, fontWeight: 800 }}>{NAV_ITEMS.find((n) => n.key === activeView)?.label ?? ''}</div>
+            <div style={{ color: '#fff', fontSize: 14, fontWeight: 800 }}>{visibleNavItems.find((n) => n.key === activeView)?.label ?? ''}</div>
           </div>
           {canAddClient ? (
             <button
@@ -157,7 +162,7 @@ export default function LawyerLayout({
 
           {mobileNavOpen && (
             <div style={{ position: 'absolute', top: '100%', insetInline: 0, background: '#1C2D4F', padding: '10px 16px 16px', display: 'flex', flexDirection: 'column', gap: 4, zIndex: 30, boxShadow: '0 12px 24px rgba(0,0,0,0.18)' }}>
-              {NAV_ITEMS.map((item) => navButton(item, true))}
+              {visibleNavItems.map((item) => navButton(item, true))}
               <select
                 value={currentMember?.id || ''}
                 onChange={(event) => {

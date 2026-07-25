@@ -3,15 +3,33 @@ import { toArNum } from '../utils/arabicDate';
 
 const PERMISSIONS = [
   { key: 'viewAllCases', label: 'عرض كل القضايا', note: 'بدل الاقتصار على القضايا المسندة للحساب' },
-  { key: 'editCases', label: 'تعديل ملفات القضايا', note: 'الجلسات والحالة والمستندات والرسائل' },
+  { key: 'viewTeamWorkload', label: 'متابعة حمل الفريق', note: 'أعداد وعناوين قضايا الزملاء دون فتحها تلقائيًا' },
+  { key: 'manageClients', label: 'إضافة الموكّلين والقضايا', note: 'إنشاء ملف موكّل وقضية جديدة' },
+  { key: 'editCases', label: 'تعديل ملفات القضايا', note: 'الحالة والتحديثات وأرشفة الملف' },
+  { key: 'recordSessions', label: 'تسجيل الجلسات', note: 'إضافة نتيجة الجلسة والموعد القادم' },
+  { key: 'manageDocuments', label: 'إدارة المستندات', note: 'رفع مستندات جديدة داخل ملف القضية' },
   { key: 'shareWithClient', label: 'المشاركة مع الموكّل', note: 'التحكم فيما يظهر في بوابة الموكّل' },
+  { key: 'replyToClients', label: 'الرد على الموكّلين', note: 'إرسال رسائل من داخل ملف القضية' },
+  { key: 'manageAssignments', label: 'إسناد القضايا', note: 'نقل المسؤولية بين أعضاء الفريق' },
   { key: 'viewInternal', label: 'المحتوى الداخلي', note: 'نقاش الفريق والملاحظات الداخلية' },
 ];
 
 const ROLE_DEFAULTS = {
-  محامي: { viewAllCases: false, editCases: true, shareWithClient: true, viewInternal: true },
-  محامية: { viewAllCases: false, editCases: true, shareWithClient: true, viewInternal: true },
-  سكرتارية: { viewAllCases: true, editCases: false, shareWithClient: false, viewInternal: false },
+  'محامي Senior': {
+    viewAllCases: false, viewTeamWorkload: true, manageClients: false, editCases: true,
+    recordSessions: true, manageDocuments: true, shareWithClient: true, replyToClients: true,
+    manageAssignments: false, viewInternal: true,
+  },
+  'محامي Junior': {
+    viewAllCases: false, viewTeamWorkload: true, manageClients: false, editCases: true,
+    recordSessions: true, manageDocuments: true, shareWithClient: false, replyToClients: false,
+    manageAssignments: false, viewInternal: true,
+  },
+  سكرتارية: {
+    viewAllCases: false, viewTeamWorkload: true, manageClients: false, editCases: false,
+    recordSessions: false, manageDocuments: false, shareWithClient: false, replyToClients: false,
+    manageAssignments: false, viewInternal: false,
+  },
 };
 
 function getLoadState(count) {
@@ -27,6 +45,7 @@ export default function TeamView({
   currentMember,
   onAddMember,
   onUpdatePermissions,
+  canOpenCase = () => false,
 }) {
   const activeClients = useMemo(
     () => allClients.filter((client) => !client.archived && client.status !== 'منتهية'),
@@ -37,6 +56,7 @@ export default function TeamView({
   const [memberName, setMemberName] = useState('');
   const [memberRole, setMemberRole] = useState('سكرتارية');
   const canManage = !!currentMember?.permissions?.manageTeam;
+  const canManageOverview = canManage || !!currentMember?.permissions?.manageAssignments;
 
   const memberCases = useMemo(
     () =>
@@ -86,7 +106,7 @@ export default function TeamView({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      {canManageOverview && <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         {[
           { label: 'القضايا النشطة', value: activeClients.length, note: 'موزعة على الفريق', color: '#1C2D4F' },
           { label: 'مواعيد مسجلة', value: upcomingCount, note: 'داخل ملفات القضايا', color: '#B5924A' },
@@ -98,7 +118,7 @@ export default function TeamView({
             <div style={{ color: '#B0B6C0', fontSize: 9.5, marginTop: 7 }}>{stat.note}</div>
           </div>
         ))}
-      </div>
+      </div>}
 
       <div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 11, padding: '0 2px' }}>
@@ -151,22 +171,25 @@ export default function TeamView({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[1.45fr_0.75fr] gap-3">
+      <div className={canManageOverview ? 'grid grid-cols-1 lg:grid-cols-[1.45fr_0.75fr] gap-3' : 'grid grid-cols-1 gap-3'}>
         <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 2px 16px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
           <div style={{ padding: '14px 15px', borderBottom: '1px solid #F0ECE5', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
             <div>
               <div style={{ color: '#1C2D4F', fontSize: 13.5, fontWeight: 800 }}>قضايا {selectedMember?.name}</div>
-              <div style={{ color: '#9BA3AF', fontSize: 9.5, marginTop: 4 }}>اضغط على القضية للانتقال إلى ملفها</div>
+              <div style={{ color: '#9BA3AF', fontSize: 9.5, marginTop: 4 }}>يمكن فتح الملفات المسموح بها فقط؛ باقي العناوين للوعي بحمل الفريق</div>
             </div>
             <span style={{ color: '#B5924A', background: 'rgba(201,168,112,0.12)', borderRadius: 20, padding: '4px 9px', fontSize: 10, fontWeight: 800 }}>{toArNum(selectedCases.length)} ملفات</span>
           </div>
-          {selectedCases.length ? selectedCases.map((client, index) => (
-            <button
-              type="button"
-              key={client.id}
-              onClick={() => onOpenCase?.(client.id)}
-              style={{ width: '100%', background: '#fff', border: 'none', borderBottom: index < selectedCases.length - 1 ? '1px solid #F3F0EA' : 'none', padding: '13px 15px', display: 'flex', alignItems: 'center', gap: 11, textAlign: 'right', cursor: 'pointer', fontFamily: "'Almarai',sans-serif" }}
-            >
+          {selectedCases.length ? selectedCases.map((client, index) => {
+            const accessible = canOpenCase(client.id);
+            return (
+              <button
+                type="button"
+                key={client.id}
+                onClick={() => accessible && onOpenCase?.(client.id)}
+                disabled={!accessible}
+                style={{ width: '100%', background: '#fff', border: 'none', borderBottom: index < selectedCases.length - 1 ? '1px solid #F3F0EA' : 'none', padding: '13px 15px', display: 'flex', alignItems: 'center', gap: 11, textAlign: 'right', cursor: accessible ? 'pointer' : 'default', fontFamily: "'Almarai',sans-serif", opacity: accessible ? 1 : 0.82 }}
+              >
               <div style={{ width: 37, height: 37, borderRadius: 10, background: client.avatarBg, color: client.avatarColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14, fontWeight: 800, flexShrink: 0 }}>{client.initial}</div>
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ color: '#1C2D4F', fontSize: 12.5, fontWeight: 800, marginBottom: 4 }}>{client.caseTitle}</div>
@@ -174,15 +197,16 @@ export default function TeamView({
               </div>
               <div style={{ textAlign: 'left', flexShrink: 0 }}>
                 <div style={{ color: '#B5924A', fontSize: 9.5, fontWeight: 800 }}>{client.nextHearing?.full || 'لا توجد جلسة'}</div>
-                <div style={{ color: '#B5BBC4', fontSize: 9, marginTop: 4 }}>فتح الملف ←</div>
+                <div style={{ color: accessible ? '#B5BBC4' : '#8C94A2', fontSize: 9, marginTop: 4 }}>{accessible ? 'فتح الملف ←' : '🔒 للعرض فقط'}</div>
               </div>
             </button>
-          )) : (
+            );
+          }) : (
             <div style={{ color: '#9BA3AF', fontSize: 12, textAlign: 'center', padding: 28 }}>لا توجد قضايا نشطة مسندة لهذا العضو</div>
           )}
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        {canManageOverview && <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           <div style={{ background: '#EEF2F6', border: '1px solid #DCE3EB', borderRadius: 14, padding: '15px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#1C2D4F', fontSize: 12.5, fontWeight: 800, marginBottom: 7 }}>
               <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#16A34A' }} />
@@ -201,10 +225,10 @@ export default function TeamView({
               {unassignedCases.length ? 'راجع الملفات غير المسندة قبل نهاية اليوم.' : 'كل القضايا النشطة مرتبطة بمحامٍ مسؤول.'}
             </div>
           </div>
-        </div>
+        </div>}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+      {canManage && <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
         <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 2px 16px rgba(0,0,0,0.05)', padding: 16 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 13 }}>
             <div>
@@ -218,7 +242,7 @@ export default function TeamView({
             </span>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(225px, 1fr))', gap: 8 }}>
             {PERMISSIONS.map((permission) => {
               const enabled = !!selectedMember?.permissions?.[permission.key];
               const editable = canManage && selectedMember?.id !== 'nadine';
@@ -281,8 +305,8 @@ export default function TeamView({
                 style={{ width: '100%', boxSizing: 'border-box', background: '#fff', border: '1px solid #DED9D0', borderRadius: 10, padding: '10px 11px', fontFamily: "'Almarai',sans-serif", color: '#1C2D4F', outline: 'none', marginBottom: 11 }}
               >
                 <option value="سكرتارية">سكرتارية</option>
-                <option value="محامي">محامي</option>
-                <option value="محامية">محامية</option>
+                <option value="محامي Senior">محامي Senior</option>
+                <option value="محامي Junior">محامي Junior</option>
               </select>
               <div style={{ color: '#7B8494', fontSize: 9.5, lineHeight: 1.6, marginBottom: 11 }}>
                 سنطبّق صلاحيات مبدئية مناسبة للدور، ويمكن تعديلها من بطاقة الصلاحيات بعد الإضافة.
@@ -304,7 +328,7 @@ export default function TeamView({
             </div>
           )}
         </div>
-      </div>
+      </div>}
     </div>
   );
 }

@@ -74,6 +74,10 @@ export default function CasePage({
 }) {
   const archived = !!client.archived;
   const canEdit = !!permissions.editCases;
+  const canRecordSessions = !!permissions.recordSessions;
+  const canManageDocuments = !!permissions.manageDocuments;
+  const canReplyToClients = !!permissions.replyToClients;
+  const canManageAssignments = !!permissions.manageAssignments;
   const canShareWithClient = !!permissions.shareWithClient;
   const canViewInternal = !!permissions.viewInternal;
   const getTeamMemberById = (id) => teamMembers.find((member) => member.id === id);
@@ -410,18 +414,18 @@ export default function CasePage({
             <div style={{ position: 'relative', display: 'inline-block', marginBottom: 14 }}>
               <button
                 type="button"
-                onClick={() => !archived && canEdit && setReassignOpen((o) => !o)}
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: 'rgba(255,255,255,0.09)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 20, padding: '5px 12px 5px 10px', cursor: archived || !canEdit ? 'default' : 'pointer', fontFamily: "'Almarai',sans-serif" }}
+                onClick={() => !archived && canManageAssignments && setReassignOpen((o) => !o)}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 7, background: 'rgba(255,255,255,0.09)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 20, padding: '5px 12px 5px 10px', cursor: archived || !canManageAssignments ? 'default' : 'pointer', fontFamily: "'Almarai',sans-serif" }}
               >
                 <div style={{ width: 8, height: 8, borderRadius: '50%', background: getTeamMemberById(client.assignedTo)?.avatarColor || '#C9A870', flexShrink: 0 }} />
                 <span style={{ color: 'rgba(255,255,255,0.78)', fontSize: 12, fontWeight: 700 }}>المسند إليه: {getTeamMemberById(client.assignedTo)?.name || '—'}</span>
-                {!archived && canEdit && (
+                {!archived && canManageAssignments && (
                   <svg width="10" height="10" viewBox="0 0 24 24" fill="none" style={{ marginRight: 2 }}>
                     <path d="M6 9l6 6 6-6" stroke="rgba(255,255,255,0.45)" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 )}
               </button>
-              {!archived && canEdit && reassignOpen && (
+              {!archived && canManageAssignments && reassignOpen && (
                 <div style={{ position: 'absolute', top: 'calc(100% + 6px)', right: 0, background: '#fff', borderRadius: 10, boxShadow: '0 8px 28px rgba(0,0,0,0.18)', padding: '6px 0', minWidth: 210, zIndex: 50 }}>
                   {teamMembers.filter((member) => member.role !== 'سكرتارية').map((member) => (
                     <button
@@ -605,7 +609,7 @@ export default function CasePage({
           <div style={{ padding: '15px 15px 0' }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 15 }}>
               <span style={{ color: '#1C2D4F', fontSize: 16, fontWeight: 800 }}>سجل الجلسات</span>
-              {!archived && canEdit && (
+              {!archived && canRecordSessions && (
                 <button
                   type="button"
                   onClick={toggleSessionForm}
@@ -619,7 +623,7 @@ export default function CasePage({
               )}
             </div>
 
-            {!archived && canEdit && showAddForm && (
+            {!archived && canRecordSessions && showAddForm && (
               <div style={{ background: '#F6F4F0', borderRadius: 10, padding: '14px', marginBottom: 16, border: '1px solid #E8E4DC' }}>
                 <div style={{ color: '#1C2D4F', fontSize: 13, fontWeight: 800, marginBottom: 4 }}>تسجيل نتيجة الجلسة</div>
                 <div style={{ color: '#7B8494', fontSize: 10.5, lineHeight: 1.6, marginBottom: 12 }}>
@@ -715,7 +719,7 @@ export default function CasePage({
 
             {sessions.length === 0 && !showAddForm ? (
               <div style={{ textAlign: 'center', padding: '24px 16px', color: '#B2B8C2', fontSize: 13 }}>
-                {canEdit ? 'لا توجد جلسات مسجلة بعد — أضف أول جلسة' : 'لا توجد جلسات مسجلة بعد'}
+                {canRecordSessions ? 'لا توجد جلسات مسجلة بعد — أضف أول جلسة' : 'لا توجد جلسات مسجلة بعد'}
               </div>
             ) : (
               sessions.map((session, idx) => (
@@ -761,7 +765,7 @@ export default function CasePage({
           <div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 13, padding: '0 2px' }}>
               <span style={{ color: '#1C2D4F', fontSize: 16, fontWeight: 800 }}>المستندات</span>
-              {!archived && canEdit && (
+              {!archived && canManageDocuments && (
                 <button type="button" onClick={() => uploadInputRef.current?.click()} style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'rgba(28,45,79,0.07)', border: 'none', borderRadius: 20, padding: '6px 13px', cursor: 'pointer', fontFamily: "'Almarai',sans-serif" }}>
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
                     <path d="M12 5v14M5 12h14" stroke="#1C2D4F" strokeWidth="2.2" strokeLinecap="round" />
@@ -1072,7 +1076,7 @@ export default function CasePage({
             </div>
 
             <div style={{ borderTop: '1px solid #F0ECE5' }} />
-            {archived || !canEdit ? (
+            {archived || !canReplyToClients ? (
               <div style={{ padding: '13px 15px', textAlign: 'center', color: '#B2B8C2', fontSize: 12.5 }}>
                 {archived ? 'القضية مؤرشفة — لا يمكن إرسال رسائل جديدة' : 'يمكنك قراءة الرسائل، لكن هذا الحساب لا يملك صلاحية الرد'}
               </div>

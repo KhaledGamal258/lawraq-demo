@@ -318,7 +318,7 @@ export default function App() {
   };
 
   const handleAddDocument = (clientId, document) => {
-    if (!currentPermissions.editCases) {
+    if (!currentPermissions.manageDocuments) {
       showToast('هذا الحساب لا يملك صلاحية إضافة مستندات');
       return;
     }
@@ -411,7 +411,7 @@ export default function App() {
   };
 
   const handleCaseMessage = (clientId, from, text) => {
-    if (from !== 'client' && !currentPermissions.editCases) {
+    if (from !== 'client' && !currentPermissions.replyToClients) {
       showToast('هذا الحساب لا يملك صلاحية الرد على الموكّل');
       return;
     }
@@ -430,6 +430,29 @@ export default function App() {
     }));
   };
 
+  const handleClientUploadDocument = (clientId, document) => {
+    const clientActor = {
+      id: clientId,
+      name: findBaseClient(clientId)?.name || 'الموكّل',
+      role: 'موكّل',
+    };
+    updateCaseContent(clientId, (content) => ({
+      ...content,
+      docs: [document, ...content.docs],
+      updates: [
+        createAutomaticActivity({
+          title: 'رفع الموكّل مستندًا جديدًا',
+          desc: `أرسل الموكّل «${document.name}» إلى المكتب وأصبح محفوظًا داخل ملف القضية.`,
+          actor: clientActor,
+          visible: true,
+          dotColor: '#16A34A',
+        }),
+        ...content.updates,
+      ],
+    }));
+    showToast('وصل مستند جديد من بوابة الموكّل');
+  };
+
   const resetDemo = () => {
     clearDemoStore();
     setCaseContentMap({});
@@ -445,7 +468,7 @@ export default function App() {
   };
 
   const handleAddClient = (form) => {
-    if (!currentPermissions.editCases) {
+    if (!currentPermissions.manageClients) {
       showToast('هذا الحساب لا يملك صلاحية إضافة قضية');
       return;
     }
@@ -483,7 +506,7 @@ export default function App() {
   };
 
   const handleAddSession = (clientId, session) => {
-    if (!currentPermissions.editCases) {
+    if (!currentPermissions.recordSessions) {
       showToast('هذا الحساب لا يملك صلاحية تسجيل الجلسات');
       return;
     }
@@ -521,7 +544,7 @@ export default function App() {
   };
 
   const handleReassign = (clientId, newAssigneeId) => {
-    if (!currentPermissions.editCases) {
+    if (!currentPermissions.manageAssignments) {
       showToast('هذا الحساب لا يملك صلاحية إسناد القضايا');
       return;
     }
@@ -688,6 +711,7 @@ export default function App() {
           latestSession={getMergedSessions(selectedClientId)[0]}
           caseContent={getCaseContent(selectedClientId)}
           onSendMessage={(text) => handleCaseMessage(selectedClientId, 'client', text)}
+          onUploadDocument={(document) => handleClientUploadDocument(selectedClientId, document)}
         />
       </div>
     );
@@ -760,12 +784,13 @@ export default function App() {
   } else if (lawyerView === 'team') {
     content = (
       <TeamView
-        allClients={currentPermissions.manageTeam ? mergedAllClients : visibleClients}
+        allClients={mergedAllClients}
         onOpenCase={openCase}
         teamMembers={teamMembers}
         currentMember={currentMember}
         onAddMember={handleAddTeamMember}
         onUpdatePermissions={handleUpdateTeamPermissions}
+        canOpenCase={(clientId) => visibleClients.some((client) => client.id === clientId)}
       />
     );
   } else if (lawyerView === 'inheritance') {
@@ -794,7 +819,7 @@ export default function App() {
       currentMember={currentMember}
       teamMembers={teamMembers}
       onSwitchAccount={handleSwitchAccount}
-      canAddClient={!!currentPermissions.editCases}
+      canAddClient={!!currentPermissions.manageClients}
     >
       {content}
       {toast && (

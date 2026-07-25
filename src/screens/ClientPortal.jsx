@@ -2,6 +2,20 @@ import { useRef, useState } from 'react';
 import BrandLogo from '../components/BrandLogo';
 import { openMockDocument } from '../utils/mockFiles';
 import { toArNum } from '../utils/arabicDate';
+import { generateId } from '../utils/id';
+
+function getUploadedDocumentType(fileName) {
+  const extension = fileName.split('.').pop()?.toLowerCase();
+  if (['doc', 'docx'].includes(extension)) return 'word';
+  if (['jpg', 'jpeg', 'png'].includes(extension)) return 'image';
+  return 'pdf';
+}
+
+function formatFileSize(bytes) {
+  if (!bytes) return 'ملف تجريبي';
+  if (bytes < 1024 * 1024) return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
 
 function FileIcon() {
   return (
@@ -19,16 +33,34 @@ function FileIcon() {
   );
 }
 
-export default function ClientPortal({ client, lawyerName, latestSession, caseContent, onSendMessage }) {
+export default function ClientPortal({ client, lawyerName, latestSession, caseContent, onSendMessage, onUploadDocument }) {
   const [messageText, setMessageText] = useState('');
   const [messageSent, setMessageSent] = useState(false);
+  const [uploadSent, setUploadSent] = useState(false);
   const messageInputRef = useRef(null);
+  const uploadInputRef = useRef(null);
+  const docsSectionRef = useRef(null);
+  const updatesSectionRef = useRef(null);
+  const messagesSectionRef = useRef(null);
   const docs = caseContent.docs.filter((doc) => doc.visible);
   const visibleUpdates = caseContent.updates.filter((item) => item.visible);
   const messages = caseContent.messages;
   const caseEnded = client.status === 'منتهية' || client.archived || !client.nextHearing?.day;
 
   const displayedUpdates = visibleUpdates.map((item) => ({ ...item, dot: item.dotColor }));
+
+  const navigateToSection = (section) => {
+    if (section === 'top') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    const target = {
+      documents: docsSectionRef,
+      updates: updatesSectionRef,
+      messages: messagesSectionRef,
+    }[section];
+    target?.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  };
 
   const onSend = () => {
     if (!messageText.trim()) return;
@@ -37,25 +69,58 @@ export default function ClientPortal({ client, lawyerName, latestSession, caseCo
     setMessageText('');
   };
 
+  const onClientDocumentSelected = (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    onUploadDocument?.({
+      id: generateId('client-doc'),
+      name: file.name,
+      date: 'الآن · أرسله الموكّل',
+      size: formatFileSize(file.size),
+      visible: true,
+      type: getUploadedDocumentType(file.name),
+      uploadedByClient: true,
+    });
+    setUploadSent(true);
+    event.target.value = '';
+  };
+
   return (
     <div dir="rtl" style={{ fontFamily: "'Almarai',sans-serif", background: '#F6F4F0', paddingBottom: 48, minHeight: '100vh' }}>
       {/* App nav bar */}
       <div style={{ background: '#1C2D4F', padding: '20px 20px' }}>
-        <div style={{ maxWidth: 640, marginInline: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <div style={{ maxWidth: 720, marginInline: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <BrandLogo compact dark markSize={34} />
           <div style={{ width: 38, height: 38, borderRadius: 19, background: 'rgba(201,168,112,0.14)', border: '1.5px solid rgba(201,168,112,0.32)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="8" r="3.5" fill="#C9A870" />
-              <path d="M5 20c0-3.866 3.134-7 7-7s7 3.134 7 7" stroke="#C9A870" strokeWidth="1.5" strokeLinecap="round" />
-            </svg>
+            <span style={{ color: '#C9A870', fontSize: 14, fontWeight: 800 }}>{client.initial}</span>
           </div>
         </div>
-        <div style={{ maxWidth: 640, margin: '12px auto 0', color: 'rgba(255,255,255,0.78)', fontSize: 13, fontWeight: 700 }}>
+        <div style={{ maxWidth: 720, margin: '12px auto 0', color: 'rgba(255,255,255,0.78)', fontSize: 13, fontWeight: 700 }}>
           أهلًا {client.name} · دي آخر حالة لملفك
         </div>
       </div>
 
-      <div style={{ padding: '20px 15px 0', maxWidth: 640, marginInline: 'auto', display: 'flex', flexDirection: 'column', gap: 26 }}>
+      <div style={{ position: 'sticky', top: 0, zIndex: 20, background: 'rgba(246,244,240,0.96)', backdropFilter: 'blur(12px)', borderBottom: '1px solid rgba(226,221,212,0.85)', padding: '9px 12px' }}>
+        <div style={{ maxWidth: 720, marginInline: 'auto', display: 'flex', alignItems: 'center', gap: 7, overflowX: 'auto', scrollbarWidth: 'none' }}>
+          {[
+            { label: 'ملخص القضية', section: 'top' },
+            { label: `المستندات (${toArNum(docs.length)})`, section: 'documents' },
+            { label: `التحديثات (${toArNum(displayedUpdates.length)})`, section: 'updates' },
+            { label: 'تواصل مع المكتب', section: 'messages' },
+          ].map((item, index) => (
+            <button
+              type="button"
+              key={item.label}
+              onClick={() => navigateToSection(item.section)}
+              style={{ flexShrink: 0, background: index === 0 ? '#1C2D4F' : '#fff', color: index === 0 ? '#C9A870' : '#5D6579', border: index === 0 ? '1px solid #1C2D4F' : '1px solid #E4DFD7', borderRadius: 20, padding: '7px 12px', fontFamily: "'Almarai',sans-serif", fontSize: 10.5, fontWeight: 800, cursor: 'pointer' }}
+            >
+              {item.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ padding: '18px 15px 0', maxWidth: 720, marginInline: 'auto', display: 'flex', flexDirection: 'column', gap: 22 }}>
         {/* HERO: CASE STATUS CARD */}
         <div style={{ background: '#1C2D4F', borderRadius: 18, overflow: 'hidden', boxShadow: '0 10px 32px rgba(28,45,79,0.24)' }}>
           <div style={{ height: 2.5, background: 'linear-gradient(to left, transparent 0%, #C9A870 20%, #C9A870 80%, transparent 100%)' }} />
@@ -143,12 +208,59 @@ export default function ClientPortal({ client, lawyerName, latestSession, caseCo
           </div>
         </div>
 
+        {/* CLIENT NEXT STEP */}
+        <div style={{ background: '#fff', border: '1px solid #E7E2D9', borderRadius: 15, padding: '15px 16px', boxShadow: '0 2px 16px rgba(0,0,0,0.045)' }}>
+          <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 13, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 11, flex: 1, minWidth: 220 }}>
+              <div style={{ width: 34, height: 34, borderRadius: 10, background: 'rgba(22,163,74,0.09)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <path d="M20 6L9 17l-5-5" stroke="#16A34A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              </div>
+              <div>
+                <div style={{ color: '#1C2D4F', fontSize: 13.5, fontWeight: 800, marginBottom: 4 }}>
+                  {caseEnded ? 'لا يوجد إجراء مطلوب — الملف مكتمل' : 'لا يوجد إجراء مطلوب منك حاليًا'}
+                </div>
+                <div style={{ color: '#7B8494', fontSize: 11, lineHeight: 1.7 }}>
+                  {caseEnded
+                    ? 'يمكنك الرجوع للمستندات والتحديثات النهائية في أي وقت.'
+                    : `المكتب يتابع الإجراءات. أقرب موعد مسجل هو ${client.nextHearing.full}، وسنظهر لك أي طلب جديد هنا.`}
+                </div>
+              </div>
+            </div>
+            <span style={{ background: 'rgba(22,163,74,0.08)', color: '#15803D', border: '1px solid rgba(22,163,74,0.18)', borderRadius: 20, padding: '5px 10px', fontSize: 9.5, fontWeight: 800, whiteSpace: 'nowrap' }}>
+              المتابعة على المكتب
+            </span>
+          </div>
+        </div>
+
         {/* SHARED DOCUMENTS */}
-        <div>
+        <div ref={docsSectionRef} style={{ scrollMarginTop: 68 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 13, padding: '0 2px' }}>
             <span style={{ color: '#1C2D4F', fontSize: 16, fontWeight: 800 }}>المستندات المشتركة</span>
-            <span style={{ color: '#9BA3AF', fontSize: 11.5, fontWeight: 700 }}>{docs.length === 1 ? 'مستند واحد' : `${toArNum(docs.length)} مستندات`}</span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
+              <span style={{ color: '#9BA3AF', fontSize: 11.5, fontWeight: 700 }}>{docs.length === 1 ? 'مستند واحد' : `${toArNum(docs.length)} مستندات`}</span>
+              <button
+                type="button"
+                onClick={() => uploadInputRef.current?.click()}
+                style={{ background: '#1C2D4F', color: '#C9A870', border: 'none', borderRadius: 20, padding: '7px 11px', fontFamily: "'Almarai',sans-serif", fontSize: 10.5, fontWeight: 800, cursor: 'pointer' }}
+              >
+                + إرسال مستند للمكتب
+              </button>
+              <input
+                ref={uploadInputRef}
+                type="file"
+                accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                onChange={onClientDocumentSelected}
+                style={{ display: 'none' }}
+              />
+            </div>
           </div>
+          {uploadSent && (
+            <div style={{ background: 'rgba(22,163,74,0.08)', border: '1px solid rgba(22,163,74,0.18)', color: '#15803D', borderRadius: 11, padding: '10px 12px', marginBottom: 10, fontSize: 11.5, fontWeight: 700 }}>
+              وصل المستند للمكتب واتسجل تلقائيًا في ملف القضية.
+            </div>
+          )}
           <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 2px 16px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
             {docs.length === 0 && (
               <div style={{ color: '#9BA3AF', fontSize: 13, padding: '18px 16px', textAlign: 'center' }}>
@@ -180,11 +292,16 @@ export default function ClientPortal({ client, lawyerName, latestSession, caseCo
         </div>
 
         {/* CASE UPDATES TIMELINE */}
-        <div>
+        <div ref={updatesSectionRef} style={{ scrollMarginTop: 68 }}>
           <div style={{ marginBottom: 13, padding: '0 2px' }}>
             <span style={{ color: '#1C2D4F', fontSize: 16, fontWeight: 800 }}>آخر التحديثات</span>
           </div>
-          <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 2px 16px rgba(0,0,0,0.05)', overflow: 'hidden' }}>
+          <div style={{ background: '#fff', borderRadius: 14, boxShadow: '0 2px 16px rgba(0,0,0,0.05)', overflowY: 'auto', maxHeight: 330, scrollbarGutter: 'stable' }}>
+            {displayedUpdates.length === 0 && (
+              <div style={{ color: '#9BA3AF', fontSize: 12.5, padding: '20px 16px', textAlign: 'center' }}>
+                لا توجد تحديثات مشاركة حتى الآن
+              </div>
+            )}
             {displayedUpdates.map((upd, idx) => {
               const isFirst = idx === 0;
               const isLast = idx === displayedUpdates.length - 1;
@@ -214,7 +331,7 @@ export default function ClientPortal({ client, lawyerName, latestSession, caseCo
         </div>
 
         {/* SHARED CONVERSATION */}
-        <div>
+        <div ref={messagesSectionRef} style={{ scrollMarginTop: 68 }}>
           <div style={{ marginBottom: 13, padding: '0 2px' }}>
             <span style={{ color: '#1C2D4F', fontSize: 16, fontWeight: 800 }}>المحادثة مع مكتبك</span>
           </div>
@@ -245,11 +362,31 @@ export default function ClientPortal({ client, lawyerName, latestSession, caseCo
                   >
                     <div style={{ fontSize: 12.5, lineHeight: 1.65 }}>{message.text}</div>
                     <div style={{ color: fromClient ? '#9BA3AF' : 'rgba(255,255,255,0.45)', fontSize: 9.5, marginTop: 4 }}>
-                      {fromClient ? 'أنت' : lawyerName} · {message.time}
+                      {fromClient ? 'أنت' : (message.senderName || lawyerName)} · {message.time}
                     </div>
                   </div>
                 );
               })}
+            </div>
+
+            <div style={{ marginBottom: 10 }}>
+              <div style={{ color: '#8B93A0', fontSize: 10.5, fontWeight: 700, marginBottom: 7 }}>رسائل سريعة</div>
+              <div style={{ display: 'flex', gap: 6, overflowX: 'auto', scrollbarWidth: 'none', paddingBottom: 2 }}>
+                {['هل فيه مستجدات جديدة؟', 'هل مطلوب مني مستندات؟', 'ممكن توضيح الموعد القادم؟'].map((reply) => (
+                  <button
+                    type="button"
+                    key={reply}
+                    onClick={() => {
+                      setMessageText(reply);
+                      setMessageSent(false);
+                      setTimeout(() => messageInputRef.current?.focus(), 0);
+                    }}
+                    style={{ flexShrink: 0, background: '#fff', color: '#5D6579', border: '1px solid #E4DFD7', borderRadius: 18, padding: '6px 10px', fontFamily: "'Almarai',sans-serif", fontSize: 10, fontWeight: 700, cursor: 'pointer' }}
+                  >
+                    {reply}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <textarea
@@ -276,11 +413,12 @@ export default function ClientPortal({ client, lawyerName, latestSession, caseCo
               <button
                 type="button"
                 onClick={onSend}
-                style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#1C2D4F', borderRadius: 20, padding: '8px 18px', cursor: 'pointer', border: 'none' }}
+                disabled={!messageText.trim()}
+                style={{ display: 'flex', alignItems: 'center', gap: 6, background: messageText.trim() ? '#1C2D4F' : '#D9D6D0', borderRadius: 20, padding: '8px 18px', cursor: messageText.trim() ? 'pointer' : 'not-allowed', border: 'none' }}
               >
-                <span style={{ color: '#C9A870', fontSize: 12.5, fontWeight: 700, lineHeight: 1 }}>إرسال</span>
+                <span style={{ color: messageText.trim() ? '#C9A870' : '#9CA1AA', fontSize: 12.5, fontWeight: 700, lineHeight: 1 }}>إرسال</span>
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
-                  <path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z" stroke="#C9A870" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M22 2L11 13M22 2L15 22l-4-9-9-4 20-7z" stroke={messageText.trim() ? '#C9A870' : '#9CA1AA'} strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </button>
             </div>
